@@ -1,3 +1,4 @@
 fastapi==0.75.2
 uvicorn[standard]==0.17.6
 geojson-pydantic==0.3.3 
+psycopg2==2.9.3 
