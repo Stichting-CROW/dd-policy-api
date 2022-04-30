@@ -4,8 +4,11 @@ from fastapi import FastAPI
 from zones import create_zone, zone, get_zones
 from db_helper import db_helper
 from mds import geographies, geography
+from fastapi.middleware.gzip import GZipMiddleware
 
 app = FastAPI()
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 @app.post("/admin/zone")
 def create_zone_route(zone: zone.Zone):
