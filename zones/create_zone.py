@@ -3,23 +3,27 @@ from db_helper import db_helper
 import json
 from fastapi import HTTPException
 
-def create_zone(zone):
+def create_zone(zone, user):
     with db_helper.get_resource() as (cur, conn):
         try:
+            check_if_user_has_access(zone, user.acl)
             zone.zone_id = create_classic_zone(cur, zone)
             create_geography(cur, zone)
             create_stop(cur, zone)
             create_no_parking_policy(cur, zone)
             conn.commit()
+            return zone
+        except HTTPException as e:
+            conn.rollback()
+            raise e
         except Exception as e:
             conn.rollback()
             print(e)
             raise HTTPException(status_code=500, detail="DB problem, check server log for details.")
 
 def create_classic_zone(cur, data):
-    if not check_if_zone_is_valid(data):
-        raise HTTPException(status_code=404, detail="Zone not completely within borders municipality.")
-    print(data.area.geometry.json())
+    if not check_if_zone_is_valid(cur, data):
+        raise HTTPException(status_code=403, detail="Zone not completely within borders municipality.")
     stmt = """
         INSERT INTO zones
         (area, name, municipality, zone_type)
@@ -41,7 +45,6 @@ def create_geography(cur, data):
 
 def create_stop(cur, data):
     if data.stop is None or data.geography_type != "stop":
-        print("no_stop")
         return
     stop = data.stop
     stmt = """
@@ -55,7 +58,6 @@ def create_stop(cur, data):
 
 def create_no_parking_policy(cur, data):
     if data.no_parking is None or data.geography_type != "no_parking":
-        print("no no_parking")
         return
     no_parking = data.no_parking
     stmt = """
@@ -66,19 +68,28 @@ def create_no_parking_policy(cur, data):
     """
     cur.execute(stmt, (str(data.geography_id), no_parking.start_date, no_parking.end_date))
 
-def check_if_zone_is_valid(zone_data):
-    return True
-    # cur = self.conn.cursor()
-    # stmt = """  
-    # SELECT ST_WITHIN(
-    #     ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326), 
-    #     -- Add some buffer to allow drawing a little bit out of the municipality border
-    #     (SELECT st_buffer(area, 0.02) 
-    #     FROM zones
-    #     WHERE municipality = %s
-    #     AND zone_type = 'municipality'
-    #     limit 1)
-    # );
-    # """
-    # cur.execute(stmt, (json.dumps(zone_data.get("geojson")), zone_data.get("municipality")))
-    # return cur.fetchone()[0]
+def check_if_zone_is_valid(cur, data):
+    stmt = """  
+    SELECT ST_WITHIN(
+        ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326), 
+        -- Add some buffer to allow drawing a little bit out of the municipality border
+        (SELECT st_buffer(area, 0.02) 
+        FROM zones
+        WHERE municipality = %s
+        AND zone_type = 'municipality'
+        limit 1) 
+    ) as is_valid;
+    """
+    cur.execute(stmt, (data.area.geometry.json(), data.municipality))
+    result = cur.fetchone()
+    if result == None:
+        return False
+    return result["is_valid"]
+
+def check_if_user_has_access(zone, acl):
+    if acl.is_admin:
+        return True
+    if zone.municipality in acl.municipalities:
+        return True
+    raise HTTPException(status_code=403, detail="User is not allowed to create zone in this municipality, check ACL.")
+    

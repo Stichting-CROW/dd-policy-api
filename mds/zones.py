@@ -8,8 +8,7 @@ from typing import Optional, List
 from geojson_pydantic import FeatureCollection, Feature, geometries
 from uuid import UUID
 
-
-class Geography(BaseModel):
+class MDSStop(BaseModel):
     name: str
     description: str
     geography_id: UUID
@@ -18,9 +17,10 @@ class Geography(BaseModel):
     published_date: int
     retire_date: Optional[int]
 
-class MDSGeography(BaseModel):
+class MDSStops(BaseModel):
     version: str = "1.2.0"
-    geographies: Geography
+    updated: int
+    geographies: List[MDSStop]
 
 def get_geography(geography_uuid):
     with db_helper.get_resource() as (cur, _):
