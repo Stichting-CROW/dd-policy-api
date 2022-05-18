@@ -41,7 +41,7 @@ def create_geography(cur, data):
         VALUES
         (%s, %s, %s, %s, %s, NOW(), NOW(), %s)
     """
-    cur.execute(stmt, (str(data.geography_id), data.zone_id, data.name, data.description, data.geography_type, data.publish))
+    cur.execute(stmt, (str(data.geography_id), data.zone_id, data.name, data.description, data.geography_type, data.published))
 
 def create_stop(cur, data):
     if data.stop is None or data.geography_type != "stop":
