@@ -11,10 +11,10 @@ class GeographyType(str, Enum):
     stop = "stop"
     no_parking = "no_parking"
     
-PointFeatureModel = Feature[Polygon, Dict]
+PolygonFeatureModel = Feature[Polygon, Dict]
 class Zone(BaseModel):
     zone_id: Optional[int]
-    area: PointFeatureModel
+    area: PolygonFeatureModel
     name: str
     municipality: str
     # variables relating to geography because there is a 1 to 1 relation
@@ -26,4 +26,4 @@ class Zone(BaseModel):
     retire_data: Optional[str]
     stop: Optional[stop.Stop]
     no_parking: Optional[no_parking.NoParking]
-    publish: Optional[bool] = False
+    published: Optional[bool] = False
