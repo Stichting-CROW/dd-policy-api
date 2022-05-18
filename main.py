@@ -9,7 +9,6 @@ from pydantic import BaseModel
 from authorization import access_control
 
 app = FastAPI()
-
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
@@ -30,12 +29,12 @@ def get_zones_public(municipality: Union[str, None] = None, geography_types: lis
 def update_zone(geography_uuid: UUID):
     return get_zones.get_zones()
 
-@app.get("/geographies")
-def get_geographies_route(response_model=geographies.MDSGeographies):
+@app.get("/geographies", response_model=geographies.MDSGeographies)
+def get_geographies_route():
     return geographies.get_geographies()
 
-@app.get("/geographies/{geography_uuid}")
-def get_geographies_route(geography_uuid: UUID, response_model=geography.MDSGeography):
+@app.get("/geographies/{geography_uuid}", response_model=geography.MDSGeography)
+def get_geographies_route(geography_uuid: UUID):
     return geography.get_geography(geography_uuid)
 
 @app.on_event("shutdown")
