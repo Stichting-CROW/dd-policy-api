@@ -63,11 +63,11 @@ def query_zones(cur, municipality, geography_types):
         WHERE 
         ((true = %s) or (zones.municipality = %s))
         AND
-        ((true = %s) or (geography_type IN %s)) 
+        ((true = %s) or (geography_type = ANY(%s))) 
     """
     print(municipality == None)
     print(geography_types == None)
-    cur.execute(stmt, (municipality == None, municipality, len(geography_types) == 0, tuple(geography_types)))
+    cur.execute(stmt, (municipality == None, municipality, len(geography_types) == 0, geography_types))
     return cur.fetchall()
 
 def convert_zones(zone_rows):
