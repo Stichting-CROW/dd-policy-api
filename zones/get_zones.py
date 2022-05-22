@@ -64,7 +64,7 @@ def query_zones(cur, municipality, geography_types):
         ((true = %s) or (zones.municipality = %s))
         AND
         ((true = %s) or (geography_type = ANY(%s)))
-        AND retire_date < NOW()
+        AND (retire_date IS NULL or retire_date > NOW())
     """
     cur.execute(stmt, (municipality == None, municipality, len(geography_types) == 0, geography_types))
     return cur.fetchall()

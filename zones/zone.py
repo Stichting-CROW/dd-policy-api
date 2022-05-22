@@ -5,6 +5,7 @@ import zones.stop as stop
 import zones.no_parking as no_parking
 from uuid import UUID, uuid1
 from enum import Enum
+import datetime
 
 class GeographyType(str, Enum):
     monitoring = "monitoring"
@@ -21,9 +22,9 @@ class Zone(BaseModel):
     geography_id: Optional[UUID] = Field(default_factory=uuid1)
     description: str
     geography_type: GeographyType
-    effective_date: Optional[str]
-    published_date: Optional[str]
-    retire_data: Optional[str]
+    effective_date: Optional[datetime.datetime] = datetime.datetime.now().astimezone()
+    published_date: Optional[datetime.datetime] = datetime.datetime.now().astimezone()
+    retire_date: Optional[datetime.datetime]
     stop: Optional[stop.Stop]
     no_parking: Optional[no_parking.NoParking]
     published: Optional[bool] = False
@@ -41,7 +42,7 @@ def convert_zones(zone_rows):
             geography_type=zone_row["geography_type"],
             effective_date=str(zone_row["effective_date"]),
             published_date=str(zone_row["published_date"]),
-            retire_data=zone_row["retire_date"],
+            retire_date=zone_row["retire_date"],
             published=zone_row["publish"]
         )
         if result.geography_type == "stop":
