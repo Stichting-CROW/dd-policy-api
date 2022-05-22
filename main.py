@@ -1,7 +1,7 @@
 from typing import List, Union
 from uuid import UUID
 from fastapi import FastAPI, Depends, Header, Query
-from zones import create_zone, zone, get_zones
+from zones import create_zone, zone, get_zones, delete_zone
 from db_helper import db_helper
 from mds import geographies, geography
 from fastapi.middleware.gzip import GZipMiddleware
@@ -11,10 +11,18 @@ from authorization import access_control
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-
-@app.post("/admin/zone")
+# /admin endpoints
+@app.post("/admin/zone", status_code=201)
 def create_zone_route(zone: zone.Zone, current_user: access_control.User = Depends(access_control.get_current_user)):
     return create_zone.create_zone(zone, current_user)
+
+@app.put("/admin/zone/{geography_uuid}")
+def update_zone(zone: zone.Zone, geography_uuid: UUID):
+    return get_zones.get_zones()
+
+@app.delete("/admin/zone/{geography_uuid}", status_code=204)
+def update_zone(geography_uuid: UUID, current_user: access_control.User = Depends(access_control.get_current_user)):
+    return delete_zone.delete_zone(geography_uuid=geography_uuid, user=current_user)
 
 @app.get("/admin/zones")
 def get_zones_private(municipality: Union[str, None] = None, geography_types: list[zone.GeographyType] = Query(default=[])):
@@ -25,9 +33,7 @@ def get_zones_private(municipality: Union[str, None] = None, geography_types: li
 def get_zones_public(municipality: Union[str, None] = None, geography_types: list[zone.GeographyType] = Query(default=[])):
     return get_zones.get_public_zones(municipality=municipality, geography_types=geography_types)
 
-@app.put("/admin/zones/{geography_uuid}")
-def update_zone(geography_uuid: UUID):
-    return get_zones.get_zones()
+# MDS - endpoints.
 
 @app.get("/geographies", response_model=geographies.MDSGeographies)
 def get_geographies_route():
