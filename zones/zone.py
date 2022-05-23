@@ -32,27 +32,31 @@ class Zone(BaseModel):
 def convert_zones(zone_rows):
     results = []
     for zone_row in zone_rows: 
-        result = Zone(
-            zone_id=zone_row["zone_id"],
-            area=zone_row["area"],
-            name=zone_row["name"],
-            municipality=zone_row["municipality"],
-            geography_id=zone_row["geography_id"],
-            description=zone_row["description"],
-            geography_type=zone_row["geography_type"],
-            effective_date=str(zone_row["effective_date"]),
-            published_date=str(zone_row["published_date"]),
-            retire_date=zone_row["retire_date"],
-            published=zone_row["publish"]
-        )
-        if result.geography_type == "stop":
-            result.stop = convert_stop(stop_row=zone_row)
-        elif result.geography_type == "no_parking":
-            result.no_parking = convert_no_parking(no_parking_row=zone_row)
-        results.append(result)
+        results.append(convert_zone(zone_row))
     return results
 
+def convert_zone(zone_row):
+    result = Zone(
+        zone_id=zone_row["zone_id"],
+        area=zone_row["area"],
+        name=zone_row["name"],
+        municipality=zone_row["municipality"],
+        geography_id=zone_row["geography_id"],
+        description=zone_row["description"],
+        geography_type=zone_row["geography_type"],
+        effective_date=str(zone_row["effective_date"]),
+        published_date=str(zone_row["published_date"]),
+        retire_date=zone_row["retire_date"],
+        published=zone_row["publish"]
+    )
+    if result.geography_type == "stop":
+        result.stop = convert_stop(stop_row=zone_row)
+    elif result.geography_type == "no_parking":
+        result.no_parking = convert_no_parking(no_parking_row=zone_row)
+    return result
+
 def convert_stop(stop_row):
+    print(stop_row)
     return stop.Stop(
         stop_id=stop_row["stop_id"],
         location=stop_row["location"],

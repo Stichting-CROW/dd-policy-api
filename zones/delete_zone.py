@@ -1,5 +1,4 @@
 from fastapi import HTTPException
-from statistics import geometric_mean
 from db_helper import db_helper
 
 def delete_zone(geography_uuid, user):

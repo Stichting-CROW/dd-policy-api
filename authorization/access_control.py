@@ -18,16 +18,13 @@ def get_user_acl(cur, token):
     encoded_token = token.split(" ")[1]
     # Verification is performed by kong (reverse proxy), 
     # therefore token is not verified for a second time so that the secret is only stored there.
-    print(encoded_token)
     result = jwt.decode(encoded_token, options={"verify_signature": False})
-    print(result)
     return query_acl(cur, result["email"])
 
 async def get_current_user(authorization: Union[str, None] = Header(None)):
     with db_helper.get_resource() as (cur, _):
         try:
             result = get_user_acl(cur, authorization)
-            print(result)
             return User(
                 token=authorization,
                 acl=result

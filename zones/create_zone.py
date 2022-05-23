@@ -39,13 +39,16 @@ def create_geography(cur, data):
         INSERT INTO geographies
         (geography_id, zone_id, name, description, geography_type, effective_date, published_date, publish)
         VALUES
-        (%s, %s, %s, %s, %s, NOW(), NOW(), %s)
+        (%s, %s, %s, %s, %s, %s, %s, %s)
     """
-    cur.execute(stmt, (str(data.geography_id), data.zone_id, data.name, data.description, data.geography_type, data.published))
+    cur.execute(stmt, (str(data.geography_id), data.zone_id, data.name, data.description, data.geography_type, 
+        data.effective_date, data.published_date, data.published))
 
 def create_stop(cur, data):
-    if data.stop is None or data.geography_type != "stop":
+    if data.geography_type != "stop":
         return
+    if data.stop is None:
+        raise HTTPException(status_code=422, detail="Object that describes details of stop missing.")
     stop = data.stop
     stmt = """
         INSERT INTO stops
@@ -53,12 +56,15 @@ def create_stop(cur, data):
         VALUES 
         (%s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326), %s, %s, %s)
     """
+    print("execute.")
     cur.execute(stmt, (str(stop.stop_id), data.name, stop.location.geometry.json(), 
         json.dumps(stop.status), json.dumps(stop.capacity), str(data.geography_id)))
 
 def create_no_parking_policy(cur, data):
-    if data.no_parking is None or data.geography_type != "no_parking":
+    if data.geography_type != "no_parking":
         return
+    if data.no_parking is None:
+        raise HTTPException(status_code=422, detail="Object that describes details of no_parkin policy missing.")
     no_parking = data.no_parking
     stmt = """
         INSERT INTO no_parking_policy

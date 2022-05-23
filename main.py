@@ -1,7 +1,7 @@
 from typing import List, Union
 from uuid import UUID
 from fastapi import FastAPI, Depends, Header, Query
-from zones import create_zone, zone, get_zones, delete_zone
+from zones import create_zone, zone, get_zones, delete_zone, edit_zone
 from db_helper import db_helper
 from mds import geographies, geography
 from fastapi.middleware.gzip import GZipMiddleware
@@ -16,9 +16,13 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 def create_zone_route(zone: zone.Zone, current_user: access_control.User = Depends(access_control.get_current_user)):
     return create_zone.create_zone(zone, current_user)
 
-@app.put("/admin/zone/{geography_uuid}")
-def update_zone(zone: zone.Zone, geography_uuid: UUID):
-    return get_zones.get_zones()
+# Edit zone
+# When not published, an existing geography can be edited.
+# When published the current geography will be replaced by a new geography, the old one will be retired. 
+# If only the stop and no_parking objects are edited the geography isn't replaced. 
+@app.put("/admin/zone")
+def update_zone(zone: zone.Zone, current_user: access_control.User = Depends(access_control.get_current_user)):
+    return edit_zone.edit_zone(zone, current_user)
 
 @app.delete("/admin/zone/{geography_uuid}", status_code=204)
 def update_zone(geography_uuid: UUID, current_user: access_control.User = Depends(access_control.get_current_user)):
