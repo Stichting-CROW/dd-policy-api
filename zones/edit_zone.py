@@ -30,7 +30,10 @@ def edit_zone(new_zone, user):
 
 
 def update_zone(cur, old_zone, new_zone):
+    print("Check stop should be updated:")
+    print(stop_should_be_updated(old_zone, new_zone))
     if stop_should_be_updated(old_zone, new_zone):
+        print("Update stop")
         update_stop(cur, new_zone)
     if no_parking_should_be_updated(old_zone, new_zone):
         update_no_parking(cur, new_zone)
@@ -62,11 +65,18 @@ def geography_should_be_updated(old_zone, new_zone):
     )
 
 def stop_should_be_updated(old_zone, new_zone):
+    print(old_zone.stop)
+    print(new_zone.stop)
+    print("checks")
+    print(old_zone.stop != new_zone.stop)
+    print(old_zone.stop == "stop")
+    print(new_zone.stop == "stop")
+    print(old_zone.name != new_zone.name)
     return (
-        old_zone.stop == "stop" and
-        new_zone.stop == "stop" and
-        old_zone.name != new_zone.name and
-        old_zone.stop != new_zone.stop
+        old_zone.geography_type == "stop" and
+        new_zone.geography_type == "stop" and
+        (old_zone.name != new_zone.name or
+        old_zone.stop != new_zone.stop)
     )
 
 def update_stop(cur, new_zone):
