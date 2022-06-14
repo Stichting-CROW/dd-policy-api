@@ -8,7 +8,6 @@ from typing import Optional, List
 from geojson_pydantic import FeatureCollection, Feature, geometries
 from uuid import UUID
 
-
 class Geography(BaseModel):
     name: str
     description: str

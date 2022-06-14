@@ -3,3 +3,4 @@ uvicorn[standard]==0.17.6
 geojson-pydantic==0.3.3 
 psycopg2==2.9.3 
 PyJWT==2.3.0 
+redis==4.3.3 

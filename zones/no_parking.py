@@ -1,5 +1,5 @@
-from typing import Optional, Dict
-from pydantic import BaseModel, Field
+from typing import Optional
+from pydantic import BaseModel
 import datetime
 
 class NoParking(BaseModel):

@@ -6,6 +6,9 @@ import zones.no_parking as no_parking
 from uuid import UUID, uuid1
 from enum import Enum
 import datetime
+from redis_helper import redis_helper
+import json
+from mds.stop import MDSStop
 
 class GeographyType(str, Enum):
     monitoring = "monitoring"
@@ -56,7 +59,6 @@ def convert_zone(zone_row):
     return result
 
 def convert_stop(stop_row):
-    print(stop_row)
     return stop.Stop(
         stop_id=stop_row["stop_id"],
         location=stop_row["location"],
@@ -69,3 +71,33 @@ def convert_no_parking(no_parking_row):
         start_date=no_parking_row["start_date"],
         end_date=no_parking_row["end_date"]
     )
+
+def set_realtime_data(result, zone):
+    if result == None:
+        return zone
+    stop_dict = json.loads(result)
+    mdsStop = MDSStop(**stop_dict)
+    zone.stop.realtime_data = stop.RealtimeStopData(
+        last_reported = mdsStop.last_reported,
+        status = mdsStop.status,
+        num_vehicles_available = mdsStop.num_vehicles_available,
+        num_vehicles_disabled = mdsStop.num_vehicles_disabled,
+        num_places_available = mdsStop.num_places_available
+    )
+    return zone
+
+def look_up_realtime_data(zones):
+    with redis_helper.get_resource() as r:
+        pipe = r.pipeline()
+        for zone in zones:
+            if zone.stop != None: 
+                pipe.get("stop:" + str(zone.stop.stop_id))
+        results = pipe.execute()
+
+        result_index = 0
+        for zone_index, zone in enumerate(zones):
+            if zone.stop != None:
+                zones[zone_index] = set_realtime_data(results[result_index], zone)
+                result_index += 1
+    return zones
+        

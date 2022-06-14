@@ -12,7 +12,8 @@ def get_private_zones(municipality, geography_types):
         try:
             zone_rows = query_zones(cur, municipality=municipality, geography_types=geography_types)
             zones = zone.convert_zones(zone_rows)
-            return zones
+            zones_with_realtime_data = zone.look_up_realtime_data(zones)
+            return zones_with_realtime_data
         except HTTPException as e:
             conn.rollback()
             raise e
@@ -26,7 +27,8 @@ def get_public_zones(municipality, geography_types):
         try:
             zone_rows = query_zones(cur, municipality=municipality, geography_types=geography_types)
             zones = zone.convert_zones(zone_rows)
-            return zones
+            zones_with_realtime_data = zone.look_up_realtime_data(zones)
+            return zones_with_realtime_data
         except HTTPException as e:
             conn.rollback()
             raise e

@@ -34,6 +34,7 @@ def update_zone(cur, old_zone, new_zone):
     print(stop_should_be_updated(old_zone, new_zone))
     if stop_should_be_updated(old_zone, new_zone):
         print("Update stop")
+        new_zone.stop.stop_id = old_zone.stop.stop_id
         update_stop(cur, new_zone)
     if no_parking_should_be_updated(old_zone, new_zone):
         update_no_parking(cur, new_zone)
@@ -84,7 +85,7 @@ def update_stop(cur, new_zone):
     stmt = """
         UPDATE stops
         SET name = %s,
-        location = %s,
+        location = ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326),
         status = %s, 
         capacity = %s
         WHERE 
