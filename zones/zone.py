@@ -5,7 +5,7 @@ import zones.stop as stop
 import zones.no_parking as no_parking
 from uuid import UUID, uuid1
 from enum import Enum
-import datetime
+from datetime import datetime
 from redis_helper import redis_helper
 import json
 from mds.stop import MDSStop
@@ -25,9 +25,9 @@ class Zone(BaseModel):
     geography_id: Optional[UUID] = Field(default_factory=uuid1)
     description: str
     geography_type: GeographyType
-    effective_date: Optional[datetime.datetime] = datetime.datetime.now().astimezone()
-    published_date: Optional[datetime.datetime] = datetime.datetime.now().astimezone()
-    retire_date: Optional[datetime.datetime]
+    effective_date: Optional[datetime] = Field(default_factory=lambda: datetime.now().astimezone())
+    published_date: Optional[datetime] = Field(default_factory=lambda: datetime.now().astimezone())
+    retire_date: Optional[datetime]
     stop: Optional[stop.Stop]
     no_parking: Optional[no_parking.NoParking]
     published: Optional[bool] = False

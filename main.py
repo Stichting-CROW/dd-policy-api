@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import FastAPI, Depends, Header, Query
 from zones import create_zone, zone, get_zones, delete_zone, edit_zone
 from db_helper import db_helper
-from mds import geographies, geography, stops, stop
+from mds import geographies, geography, stops, stop, policies, policy
 from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel
 from authorization import access_control
@@ -54,6 +54,14 @@ def get_stops_route(municipality: Union[str, None] = None):
 @app.get("/stops/{stop_uuid}", response_model=stop.MDSStops)
 def get_stop_route(stop_uuid: UUID):
     return stop.get_stop(stop_uuid)
+
+@app.get("/policies", response_model=policies.MDSPolicies)
+def get_stops_route(municipality: Union[str, None] = None):
+    return policies.get_policies(municipality)
+
+@app.get("/policies/{policy_uuid}", response_model=policies.MDSPolicies)
+def get_stop_route(policy_uuid: UUID):
+    return policies.get_policy(policy_uuid)
 
 @app.on_event("shutdown")
 def shutdown_event():

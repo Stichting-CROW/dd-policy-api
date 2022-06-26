@@ -2,6 +2,7 @@
 from db_helper import db_helper
 import json
 from fastapi import HTTPException
+import zones.generate_policy as generate_policy
 
 def create_zone(zone, user):
     with db_helper.get_resource() as (cur, conn):
@@ -73,6 +74,8 @@ def create_no_parking_policy(cur, data):
         (%s, %s, %s)
     """
     cur.execute(stmt, (str(data.geography_id), no_parking.start_date, no_parking.end_date))
+    generate_policy.generate_policy(cur, data)
+    
 
 def check_if_zone_is_valid(cur, data):
     stmt = """  

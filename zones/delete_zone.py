@@ -13,6 +13,7 @@ def delete_zone(geography_uuid, user):
                 delete_geography(cur, geography_uuid=geography_uuid)
             else:
                 retire_geography(cur, geography_uuid=geography_uuid)
+                retire_policy(cur, geography_uuid=geography_uuid)
             conn.commit()
             return
         except HTTPException as e:
@@ -80,6 +81,16 @@ def retire_geography(cur, geography_uuid):
         UPDATE geographies
         SET retire_date = NOW()
         WHERE geography_id = %s
+    """
+    cur.execute(stmt, (str(geography_uuid),))
+    return
+
+def retire_policy(cur, geography_uuid):
+    print("HIER")
+    stmt = """
+        UPDATE policies
+        SET end_date = NOW()
+        WHERE geography_ref = %s
     """
     cur.execute(stmt, (str(geography_uuid),))
     return

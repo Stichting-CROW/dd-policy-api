@@ -2,8 +2,9 @@ from fastapi import HTTPException
 from db_helper import db_helper
 from mds import geography
 from zones.create_zone import create_no_parking_policy, create_stop, check_if_zone_is_valid, create_classic_zone, create_geography
-from zones.delete_zone import delete_no_parking, delete_stops, retire_geography
+from zones.delete_zone import delete_no_parking, delete_stops, retire_geography, retire_policy
 from zones.get_zones import get_zone_by_id
+from zones.generate_policy import generate_policy
 from uuid import uuid1
 import json
 import datetime
@@ -114,6 +115,8 @@ def update_no_parking(cur, new_zone):
     cur.execute(stmt, (no_parking.start_date, no_parking.end_date, str(new_zone.geography_id)))
     if cur.rowcount == 0:
         raise HTTPException(status_code=404, detail="No no_parking policy with this geography_id exists.")
+    retire_policy(cur, new_zone.geography_id)
+    generate_policy(cur, new_zone)
 
 def check_if_user_has_access(old_municipality, new_municipality, acl):
     if acl.is_admin:
@@ -138,6 +141,8 @@ def retire_and_create_geography(cur, new_zone, old_zone):
     create_geography(cur, new_zone)
     update_geography_id_stop(cur, old_zone.geography_id, new_zone.geography_id)
     update_geography_id_no_parking(cur, old_zone.geography_id, new_zone.geography_id)
+    generate_policy(cur, new_zone)
+    
     print("retire")
     print(str(old_zone.geography_id))
     retire_geography(cur, old_zone.geography_id)
@@ -194,6 +199,8 @@ def update_geography_id_no_parking(cur, old_geography_id, new_geography_id):
         WHERE geography_id = %s
     """
     cur.execute(stmt, (str(new_geography_id), str(old_geography_id)))
+    retire_policy(cur, old_geography_id)
+    
 
 def publish_geography(cur, new_zone):
     new_zone.effective_date = datetime.datetime.now().astimezone()
