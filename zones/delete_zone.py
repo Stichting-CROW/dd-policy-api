@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from db_helper import db_helper
+import traceback
 
 def delete_zone(geography_uuid, user):
     with db_helper.get_resource() as (cur, conn):
@@ -21,8 +22,9 @@ def delete_zone(geography_uuid, user):
             raise e
         except Exception as e:
             conn.rollback()
+            print(traceback.format_exc())
             print(e)
-            raise HTTPException(status_code=500, detail="DB problem, check server log for details.")
+            raise HTTPException(status_code=500, detail="DB problem, check server log for details.\n\n" + str(e))
 
 def check_if_geometry_is_published(cur, geography_uuid):
     stmt = """
