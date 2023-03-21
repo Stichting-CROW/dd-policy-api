@@ -1,9 +1,11 @@
 from typing import List, Union
 from uuid import UUID
 from fastapi import FastAPI, Depends, Header, Query
+from fastapi.responses import StreamingResponse
 from zones import create_zone, zone, get_zones, delete_zone, edit_zone
 from db_helper import db_helper
 from mds import geographies, geography, stops, stop, policies, policy
+from kml import kml_export
 from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel
 from authorization import access_control
@@ -62,6 +64,15 @@ def get_stops_route(municipality: Union[str, None] = None):
 @app.get("/policies/{policy_uuid}", response_model=policies.MDSPolicies)
 def get_stop_route(policy_uuid: UUID):
     return policies.get_policy(policy_uuid)
+
+@app.get("/kml/export")
+def get_stop_route(municipality: Union[str, None] = None):
+    result = kml_export.export(municipality)
+    return StreamingResponse(
+            iter([result.getvalue()]), 
+            media_type="application/x-zip-compressed",
+            headers={'Content-Disposition': 'attachment; filename="{}"'.format("dashboarddeelmobiliteit_kml_export.zip")}
+        )
 
 @app.on_event("shutdown")
 def shutdown_event():

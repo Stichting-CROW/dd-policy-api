@@ -4,24 +4,12 @@ from contextlib import contextmanager
 import os
 
 class DBHelper:
-    def __init__(self):
+    def __init__(self, conn_str):
         self._connection_pool = None
-
-    def get_conn_str(self):
-        # Initialisation
-        conn_str = "dbname=deelfietsdashboard"
-        if "dev" in os.environ:
-            conn_str = "dbname=deelfietsdashboard4"
-
-        if "ip" in os.environ:
-            conn_str += " host={} ".format(os.environ['ip'])
-        if "password" in os.environ:
-            conn_str += " user=deelfietsdashboard password={}".format(os.environ['password'])
-        return conn_str
+        self.conn_str = conn_str
 
     def initialize_connection_pool(self):
-        conn_str = self.get_conn_str()
-        self._connection_pool = pool.ThreadedConnectionPool(2, 10 , conn_str)
+        self._connection_pool = pool.ThreadedConnectionPool(2, 10 , self.conn_str)
 
     @contextmanager
     def get_resource(self):
@@ -40,4 +28,16 @@ class DBHelper:
         if self._connection_pool is not None:
             self._connection_pool.closeall()
 
-db_helper = DBHelper()
+# Init normal db
+conn_str = "dbname=deelfietsdashboard"
+
+if "DB_HOST" in os.environ:
+    conn_str += " host={} ".format(os.environ['DB_HOST'])
+if "DB_USER" in os.environ:
+    conn_str += " user={}".format(os.environ['DB_USER'])
+if "DB_PASSWORD" in os.environ:
+    conn_str += " password={}".format(os.environ['DB_PASSWORD'])
+if "DB_PORT" in os.environ:
+    conn_str += " port={}".format(os.environ['DB_PORT'])
+
+db_helper = DBHelper(conn_str)

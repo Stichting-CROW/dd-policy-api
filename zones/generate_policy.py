@@ -4,6 +4,9 @@ import json
 from pydantic.json import pydantic_encoder
 
 def generate_policy(cur, data: zone.Zone):
+    if data.geography_type != "no_parking":
+      return
+
     rule = mds.policy.Rule(
         name = "Disallow parking",
         description = "This rule forbids parking.",

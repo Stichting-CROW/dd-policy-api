@@ -8,6 +8,7 @@ from zones.generate_policy import generate_policy
 from uuid import uuid1
 import json
 import datetime
+import traceback
 
 def edit_zone(new_zone, user):
     with db_helper.get_resource() as (cur, conn):
@@ -26,8 +27,9 @@ def edit_zone(new_zone, user):
             raise e
         except Exception as e:
             conn.rollback()
+            print(traceback.format_exc())
             print(e)
-            raise HTTPException(status_code=500, detail="DB problem, check server log for details.")
+            raise HTTPException(status_code=500, detail="DB problem, check server log for details. \n\n" + str(e))
 
 
 def update_zone(cur, old_zone, new_zone):
