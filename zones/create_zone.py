@@ -3,15 +3,37 @@ from db_helper import db_helper
 import json
 from fastapi import HTTPException
 import zones.generate_policy as generate_policy
+from zones.zone import Zone
+
+def create_single_zone(cur, zone: Zone, user):
+    check_if_user_has_access(zone, user.acl)
+    zone.zone_id = create_classic_zone(cur, zone)
+    create_geography(cur, zone)
+    create_stop(cur, zone)
+    create_no_parking_policy(cur, zone)
+    return zone
+    
+def create_zones(zones, user):
+    result = []
+    with db_helper.get_resource() as (cur, conn):
+        try:
+            for zone in zones:
+                result.append(create_single_zone(cur, zone, user))
+            conn.commit()
+            return result
+        except HTTPException as e:
+            conn.rollback()
+            raise e
+        except Exception as e:
+            conn.rollback()
+            print(e)
+            raise HTTPException(status_code=500, detail="DB problem, check server log for details.")
+
 
 def create_zone(zone, user):
     with db_helper.get_resource() as (cur, conn):
         try:
-            check_if_user_has_access(zone, user.acl)
-            zone.zone_id = create_classic_zone(cur, zone)
-            create_geography(cur, zone)
-            create_stop(cur, zone)
-            create_no_parking_policy(cur, zone)
+            zone = create_single_zone(cur, zone, user)
             conn.commit()
             return zone
         except HTTPException as e:

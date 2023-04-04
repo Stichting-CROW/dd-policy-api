@@ -1,11 +1,13 @@
 from typing import List, Union
 from uuid import UUID
-from fastapi import FastAPI, Depends, Header, Query
+from typing import Annotated
+from fastapi import FastAPI, Depends, Header, Query, File, UploadFile
 from fastapi.responses import StreamingResponse
+
 from zones import create_zone, zone, get_zones, delete_zone, edit_zone
 from db_helper import db_helper
 from mds import geographies, geography, stops, stop, policies, policy
-from kml import kml_export
+from kml import kml_export, kml_import
 from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel
 from authorization import access_control
@@ -17,6 +19,11 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 @app.post("/admin/zone", status_code=201)
 def create_zone_route(zone: zone.Zone, current_user: access_control.User = Depends(access_control.get_current_user)):
     return create_zone.create_zone(zone, current_user)
+
+# /admin endpoints
+@app.post("/admin/bulk_insert_zones", status_code=201)
+def create_bulk_zone_route(zones: list[zone.Zone], current_user: access_control.User = Depends(access_control.get_current_user)):
+    return create_zone.create_zones(zones, current_user)
 
 # Edit zone
 # When not published, an existing geography can be edited.
@@ -66,13 +73,17 @@ def get_stop_route(policy_uuid: UUID):
     return policies.get_policy(policy_uuid)
 
 @app.get("/kml/export")
-def get_stop_route(municipality: Union[str, None] = None):
+def get_kml_route(municipality: Union[str, None] = None):
     result = kml_export.export(municipality)
     return StreamingResponse(
             iter([result.getvalue()]), 
             media_type="application/x-zip-compressed",
             headers={'Content-Disposition': 'attachment; filename="{}"'.format("dashboarddeelmobiliteit_kml_export.zip")}
         )
+
+@app.post("/kml/pre_import")
+def get_pre_import_kml(file: Annotated[bytes, File()], municipality: str):
+    return kml_import.kml_import(file, municipality)
 
 @app.on_event("shutdown")
 def shutdown_event():

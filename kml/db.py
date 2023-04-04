@@ -22,4 +22,22 @@ def get_zones_to_export(municipality):
             conn.rollback()
             print(e)
             return False
+        
+def get_municipality_border(municipality_code: str):
+    stmt = """
+        SELECT area 
+        FROM zones 
+        WHERE municipality = %(municipality_code)s
+        AND zone_type = 'municipality';
+    """
+    with db_helper.get_resource() as (cur, conn):
+        try:
+            cur.execute(stmt, {
+                "municipality_code": municipality_code
+            })
+            return cur.fetchone()["area"]
+        except Exception as e:
+            conn.rollback()
+            return None
+
 
