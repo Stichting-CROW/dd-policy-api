@@ -81,8 +81,8 @@ def get_kml_route(municipality: Union[str, None] = None):
             headers={'Content-Disposition': 'attachment; filename="{}"'.format("dashboarddeelmobiliteit_kml_export.zip")}
         )
 
-@app.post("/kml/pre_import")
-def get_pre_import_kml(file: Annotated[bytes, File()], municipality: str):
+@app.post("/admin/kml/pre_import")
+def get_pre_import_kml(file: Annotated[bytes, File()], municipality: str, current_user: access_control.User = Depends(access_control.get_current_user)):
     return kml_import.kml_import(file, municipality)
 
 @app.on_event("shutdown")
