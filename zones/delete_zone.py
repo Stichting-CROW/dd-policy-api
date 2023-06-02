@@ -100,6 +100,6 @@ def retire_policy(cur, geography_uuid):
 def check_if_user_has_access(municipality, acl):
     if acl.is_admin:
         return True
-    if municipality in acl.municipalities:
+    if municipality in acl.municipalities and acl.is_allowed_to_edit:
         return True
     raise HTTPException(status_code=403, detail="User is not allowed to delete geography in this municipality, check ACL.")

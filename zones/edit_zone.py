@@ -127,6 +127,8 @@ def check_if_user_has_access(old_municipality, new_municipality, acl):
         raise HTTPException(status_code=403, detail="User is not allowed to change municipality of this geography, check ACL.")
     if new_municipality not in acl.municipalities:
         raise HTTPException(status_code=403, detail="User is not allowed to edit zone in this municipality, check ACL.")
+    if not acl.is_allowed_to_edit:
+        raise HTTPException(status_code=403, detail="User is not allowed to edit zones.")
     return True
 
 def update_geography(cur, old_zone, new_zone):

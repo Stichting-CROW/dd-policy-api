@@ -120,6 +120,8 @@ def check_if_zone_is_valid(cur, data):
 def check_if_user_has_access(zone, acl):
     if acl.is_admin:
         return True
+    if not acl.is_allowed_to_edit:
+        raise HTTPException(status_code=403, detail="User is not allowed to create zone in this municipality, check ACL.")
     if zone.municipality in acl.municipalities:
         return True
     raise HTTPException(status_code=403, detail="User is not allowed to create zone in this municipality, check ACL.")

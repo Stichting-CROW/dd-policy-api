@@ -8,6 +8,7 @@ from fastapi import HTTPException
 
 class ACL(BaseModel):
     is_admin: bool
+    is_allowed_to_edit: bool
     municipalities: set
 
 class User(BaseModel):
@@ -39,9 +40,11 @@ async def get_current_user(authorization: Union[str, None] = Header(None)):
 
 def query_acl(cur, email):
     stmt = """
-    SELECT username, is_admin
-    FROM acl
-    WHERE username=%s;
+    SELECT user_id, type_of_organisation, 
+    privileges, data_owner_of_municipalities 
+    FROM user_account 
+    JOIN organisation USING(organisation_id) 
+    WHERE user_id = %s;
     """
 
     cur.execute(stmt, (email,))
@@ -49,20 +52,10 @@ def query_acl(cur, email):
         raise HTTPException(status_code=403, detail="User is not known in ACL")
     
     user = cur.fetchone()
+    is_allowed_to_edit = user["type_of_organisation"] == "ADMIN" or "MICROHUB_EDIT" in user["privileges"]
     acl_user = ACL(
-        is_admin = user["is_admin"],
-        municipalities = retrieve_municipalities(cur, email)
+        is_admin = user["type_of_organisation"] == "ADMIN",
+        municipalities = user["data_owner_of_municipalities"],
+        is_allowed_to_edit=is_allowed_to_edit
     )
     return acl_user
-
-def retrieve_municipalities(cur, email):
-    stmt = """SELECT acl_municipalities.municipality as municipality_code
-        FROM acl_municipalities
-        WHERE username = %s"""
-    cur.execute(stmt, (email,))
-    results = cur.fetchall()
-    municipalities = set()
-    for item in results:
-        municipalities.add(item["municipality_code"])
-    print(municipalities)
-    return municipalities
