@@ -1,7 +1,7 @@
 
 import jwt
 from pydantic import BaseModel
-from typing import Union
+from typing import Union, Optional
 from fastapi import Header
 from db_helper import db_helper
 from fastapi import HTTPException
@@ -9,7 +9,7 @@ from fastapi import HTTPException
 class ACL(BaseModel):
     is_admin: bool
     is_allowed_to_edit: bool
-    municipalities: set
+    municipalities: Optional[set] = set()
 
 class User(BaseModel):
     token: str
