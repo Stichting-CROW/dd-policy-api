@@ -9,9 +9,7 @@ class RedisHelper:
 
     def get_conn_str(self):
         # Initialisation
-        conn_str = "localhost"
-        if "REDIS_URL" in os.environ:
-            conn_str = os.getenv("REDIS_URL")
+        conn_str = os.getenv("REDIS_URL", "localhost")
 
         return conn_str
 

@@ -29,7 +29,7 @@ class DBHelper:
             self._connection_pool.closeall()
 
 # Init normal db
-conn_str = "dbname=deelfietsdashboard"
+conn_str = f"dbname={os.getenv('DB_NAME')}"
 
 if "DB_HOST" in os.environ:
     conn_str += " host={} ".format(os.environ['DB_HOST'])
