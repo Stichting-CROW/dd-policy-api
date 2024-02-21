@@ -15,11 +15,9 @@ class ServiceArea(BaseModel):
     valid_until: Optional[datetime]
     geometries: FeatureCollection
 
-# PointFeatureModel = Feature[Point, Dict]
-# class Stop(BaseModel):
-#     stop_id: Optional[UUID] = Field(default_factory=uuid1)
-#     location: PointFeatureModel
-#     status: Dict[str, bool]
-#     capacity: Dict[str, int]
-#     realtime_data: Optional[RealtimeStopData]
-
+class ServiceAreaVersion(BaseModel):
+    service_area_version_id: int
+    municipality: str
+    operator: str
+    valid_from: datetime
+    valid_until: Optional[datetime]

@@ -1,13 +1,8 @@
-from click import pass_context
 from db_helper import db_helper
-import json
 from fastapi import HTTPException
 import zones.zone as zone
 import zones.stop as stop
 import zones.no_parking as no_parking
-from geojson_pydantic import Feature, Polygon
-from pydantic import BaseModel, Field
-from typing import Optional, Dict
 
 from service_areas.service_area import ServiceArea
 from geojson_pydantic import FeatureCollection
@@ -62,8 +57,6 @@ def query_service_area_geometries(cur, geom_hashes: list[str]):
             WHERE geom_hash = ANY(%s)
         ) as q1;
     """
-    print("here")
-    print(geom_hashes)
     cur.execute(stmt, (geom_hashes,))
     return cur.fetchone()
 

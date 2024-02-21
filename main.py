@@ -1,7 +1,7 @@
 from typing import List, Union
 from uuid import UUID
 from typing import Annotated
-from fastapi import FastAPI, Depends, Header, Query, File, UploadFile
+from fastapi import FastAPI, Depends, Header, Query, File, UploadFile, Body
 from fastapi.responses import StreamingResponse
 
 from zones import create_zone, zone, get_zones, delete_zone, edit_zone
@@ -11,7 +11,8 @@ from kml import kml_export, kml_import
 from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel
 from authorization import access_control
-from service_areas import get_available_operators, get_service_areas
+from service_areas import get_available_operators, get_service_areas, get_service_area_history
+from datetime import date
 
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -55,9 +56,15 @@ def get_zones_public(municipalities: list[str] = Query(), operators: list[str] =
 def get_operators_with_service_area(municipalities: list[str] = Query()):
     return get_available_operators.get_available_operators(municipalities=municipalities)
 
-# @app.get("/public/service_area/history")
-# def get_zones_public(municipality: Union[str, None] = None, geography_types: list[zone.GeographyType] = Query(default=[])):
-#     return get_zones.get_public_zones(municipality=municipality, geography_types=geography_types)
+@app.get("/public/service_area/history")
+def get_zones_public(
+    start_date: Annotated[date, Query()],
+    end_date: Annotated[date, Query()],
+    municipalities: list[str] = Query(), 
+    operators: list[str] = Query(),
+):
+    return get_service_area_history.get_service_area_history(municipalities, operators, start_date, end_date)
+    # return get_zones.get_public_zones(municipality=municipality, geography_types=geography_types)
 
 # @app.get("/public/service_area/delta/{service_area_version_id}")
 # def get_zones_public(municipality: Union[str, None] = None, geography_types: list[zone.GeographyType] = Query(default=[])):
