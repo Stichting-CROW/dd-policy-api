@@ -33,8 +33,7 @@ def get_service_areas(municipalities, operators):
 
 
 def query_service_areas(cur, municipalities: list[str], operators: list[str]):
-    print(operators)
-    print(municipalities)
+
     stmt = """
         SELECT service_area_version_id, municipality, operator, valid_from, service_area_geometries  
         FROM service_area 

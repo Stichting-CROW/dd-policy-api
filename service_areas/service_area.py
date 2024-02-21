@@ -1,10 +1,8 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from typing import Optional, Dict
-from geojson_pydantic import Feature, Point
-from uuid import UUID, uuid1
+from typing import Optional
 from datetime import datetime
-from geojson_pydantic import FeatureCollection, Feature, geometries
+from geojson_pydantic import FeatureCollection
 
 
 class ServiceArea(BaseModel):

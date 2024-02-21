@@ -1,13 +1,7 @@
-from click import pass_context
 from db_helper import db_helper
 import json
 from fastapi import HTTPException
-import zones.zone as zone
-import zones.stop as stop
-import zones.no_parking as no_parking
-from geojson_pydantic import Feature, Polygon
-from pydantic import BaseModel, Field
-from typing import Optional, Dict
+from pydantic import BaseModel
 
 class AvailableOperatorResponse(BaseModel):
     operators_with_service_area: list[str]
