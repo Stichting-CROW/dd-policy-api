@@ -1,8 +1,8 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Dict
 from geojson_pydantic import Feature, Polygon
-import zones.stop as stop
-import zones.no_parking as no_parking
+import zones.stop as stop_mod
+import zones.no_parking as no_parking_mod
 from uuid import UUID, uuid1
 from enum import Enum
 from datetime import datetime
@@ -17,20 +17,20 @@ class GeographyType(str, Enum):
     
 PolygonFeatureModel = Feature[Polygon, Dict]
 class Zone(BaseModel):
-    zone_id: Optional[int]
+    zone_id: int | None = None
     area: PolygonFeatureModel
     name: str
     municipality: str
     # variables relating to geography because there is a 1 to 1 relation
-    geography_id: Optional[UUID] = Field(default_factory=uuid1)
+    geography_id: UUID | None = Field(default_factory=uuid1)
     description: str
     geography_type: GeographyType
-    effective_date: Optional[datetime] = Field(default_factory=lambda: datetime.now().astimezone())
-    published_date: Optional[datetime] = Field(default_factory=lambda: datetime.now().astimezone())
-    retire_date: Optional[datetime]
-    stop: Optional[stop.Stop]
-    no_parking: Optional[no_parking.NoParking]
-    published: Optional[bool] = False
+    effective_date: datetime | None = None
+    published_date: datetime | None = None
+    retire_date: datetime | None = None
+    stop: stop_mod.Stop | None = None
+    no_parking: no_parking_mod.NoParking | None = None
+    published: bool | None = False
 
 def convert_zones(zone_rows):
     results = []
@@ -59,7 +59,7 @@ def convert_zone(zone_row):
     return result
 
 def convert_stop(stop_row):
-    return stop.Stop(
+    return stop_mod.Stop(
         stop_id=stop_row["stop_id"],
         location=stop_row["location"],
         status=stop_row["status"],
@@ -67,7 +67,7 @@ def convert_stop(stop_row):
     )
 
 def convert_no_parking(no_parking_row):
-    return no_parking.NoParking(
+    return no_parking_mod.NoParking(
         start_date=no_parking_row["start_date"],
         end_date=no_parking_row["end_date"]
     )

@@ -57,7 +57,7 @@ def get_operators_with_service_area(municipalities: list[str] = Query()):
     return get_available_operators.get_available_operators(municipalities=municipalities)
 
 @app.get("/public/service_area/history")
-def get_zones_public(
+def get_service_area_history(
     start_date: Annotated[date, Query()],
     end_date: Annotated[date, Query()],
     municipalities: list[str] = Query(), 

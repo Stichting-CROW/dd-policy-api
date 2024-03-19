@@ -12,9 +12,9 @@ class RealtimeStopData(BaseModel):
 
 PointFeatureModel = Feature[Point, Dict]
 class Stop(BaseModel):
-    stop_id: Optional[UUID] = Field(default_factory=uuid1)
+    stop_id: UUID | None = Field(default_factory=uuid1)
     location: PointFeatureModel
     status: Dict[str, bool]
     capacity: Dict[str, int]
-    realtime_data: Optional[RealtimeStopData]
+    realtime_data: RealtimeStopData | None = None
 
