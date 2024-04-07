@@ -29,7 +29,6 @@ def create_zones(zones, user):
             print(e)
             raise HTTPException(status_code=500, detail="DB problem, check server log for details.")
 
-
 def create_zone(zone, user):
     with db_helper.get_resource() as (cur, conn):
         try:
@@ -60,12 +59,12 @@ def create_classic_zone(cur, data):
 def create_geography(cur, data):
     stmt = """
         INSERT INTO geographies
-        (geography_id, zone_id, name, description, geography_type, effective_date, published_date, publish)
+        (geography_id, zone_id, name, description, geography_type, effective_date, published_date, prev_geographies, created_at, modified_at)
         VALUES
-        (%s, %s, %s, %s, %s, %s, %s, %s)
+        (%s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
     """
     cur.execute(stmt, (str(data.geography_id), data.zone_id, data.name, data.description, data.geography_type, 
-        data.effective_date, data.published_date, data.published))
+        data.effective_date, data.published_date, data.prev_geographies))
 
 def create_stop(cur, data):
     if data.geography_type != "stop":

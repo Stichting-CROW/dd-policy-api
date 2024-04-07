@@ -1,10 +1,10 @@
 from typing import List, Union
 from uuid import UUID
 from typing import Annotated
-from fastapi import FastAPI, Depends, Header, Query, File, UploadFile, Body
+from fastapi import FastAPI, Depends, Header, Query, File, UploadFile, Body, HTTPException
 from fastapi.responses import StreamingResponse
 
-from zones import create_zone, zone, get_zones, delete_zone, edit_zone
+from zones import create_zone, zone, get_zones, delete_zone, edit_zone, publish_zones, make_concept
 from db_helper import db_helper
 from mds import geographies, geography, stops, stop, policies, policy
 from kml import kml_export, kml_import
@@ -27,6 +27,15 @@ def create_zone_route(zone: zone.Zone, current_user: access_control.User = Depen
 def create_bulk_zone_route(zones: list[zone.Zone], current_user: access_control.User = Depends(access_control.get_current_user)):
     return create_zone.create_zones(zones, current_user)
 
+# /admin endpoints
+@app.post("/admin/zones/publish", status_code=204)
+def publish_zones_route(publish_zone_request: publish_zones.PublishZoneRequest, current_user: access_control.User = Depends(access_control.get_current_user)):
+    return publish_zones.publish_zones_route(publish_zone_request, current_user)
+
+@app.post("/admin/zones/make_concept", status_code=204)
+def make_concept_route(make_concept_request: make_concept.MakeConceptRequest, current_user: access_control.User = Depends(access_control.get_current_user)):
+    return make_concept.make_concept_route(make_concept_request=make_concept_request, current_user=current_user)
+
 # Edit zone
 # When not published, an existing geography can be edited.
 # When published the current geography will be replaced by a new geography, the old one will be retired. 
@@ -40,13 +49,18 @@ def update_zone(geography_uuid: UUID, current_user: access_control.User = Depend
     return delete_zone.delete_zone(geography_uuid=geography_uuid, user=current_user)
 
 @app.get("/admin/zones")
-def get_zones_private(municipality: Union[str, None] = None, geography_types: list[zone.GeographyType] = Query(default=[])):
-    print(geography_types)
-    return get_zones.get_private_zones(municipality=municipality, geography_types=geography_types)
+def get_zones_private(
+    municipality: Union[str, None] = None, 
+    geography_types: list[zone.GeographyType] = Query(default=[]),
+    phases: Annotated[list[zone.Phase], Query()] = []):
+    if len(phases) == 0:
+        raise HTTPException(status_code=400, detail="At least one phase in query parameter phases should be specified.")
+    return get_zones.get_private_zones(municipality=municipality, geography_types=geography_types, phases=phases)
 
 @app.get("/public/zones")
 def get_zones_public(municipality: Union[str, None] = None, geography_types: list[zone.GeographyType] = Query(default=[])):
     return get_zones.get_public_zones(municipality=municipality, geography_types=geography_types)
+
 
 @app.get("/public/service_area")
 def get_zones_public(municipalities: list[str] = Query(), operators: list[str] = Query()):

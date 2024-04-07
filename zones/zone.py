@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Dict
-from geojson_pydantic import Feature, Polygon
+from typing import Dict, Union
+from geojson_pydantic import Feature, Polygon, MultiPolygon
 import zones.stop as stop_mod
 import zones.no_parking as no_parking_mod
 from uuid import UUID, uuid1
@@ -14,8 +14,18 @@ class GeographyType(str, Enum):
     monitoring = "monitoring"
     stop = "stop"
     no_parking = "no_parking"
+
+class Phase(str, Enum):
+    concept = "concept"
+    retirement_concept = "retirement_concept"
+    committed_concept = "committed_concept"
+    committed_retire_concept = "committed_retirement_concept"
+    published = "published"
+    published_retirement = "published_retirement"
+    active = "active"
+    archived = "archived"
     
-PolygonFeatureModel = Feature[Polygon, Dict]
+PolygonFeatureModel = Feature[Union[MultiPolygon, Polygon], Dict]
 class Zone(BaseModel):
     zone_id: int | None = None
     area: PolygonFeatureModel
@@ -25,12 +35,17 @@ class Zone(BaseModel):
     geography_id: UUID | None = Field(default_factory=uuid1)
     description: str
     geography_type: GeographyType
+    prev_geographies: list[UUID] = []
     effective_date: datetime | None = None
+    propose_retirement: bool | None = False
     published_date: datetime | None = None
+    published_retire_date: datetime | None = None
     retire_date: datetime | None = None
     stop: stop_mod.Stop | None = None
     no_parking: no_parking_mod.NoParking | None = None
-    published: bool | None = False
+    created_at: datetime
+    modified_at: datetime
+    phase: str
 
 def convert_zones(zone_rows):
     results = []
@@ -47,11 +62,18 @@ def convert_zone(zone_row):
         geography_id=zone_row["geography_id"],
         description=zone_row["description"],
         geography_type=zone_row["geography_type"],
-        effective_date=str(zone_row["effective_date"]),
-        published_date=str(zone_row["published_date"]),
+        effective_date=zone_row["effective_date"],
+        published_date=zone_row["published_date"],
         retire_date=zone_row["retire_date"],
-        published=zone_row["publish"]
+        stop=None,
+        no_parking=None,
+        created_at=zone_row["created_at"],
+        modified_at=zone_row["modified_at"],
+        phase=zone_row["phase"]
     )
+    if zone_row["prev_geographies"]:
+        result.prev_geographies = zone_row["prev_geographies"]
+    print(result.geography_type)
     if result.geography_type == "stop":
         result.stop = convert_stop(stop_row=zone_row)
     elif result.geography_type == "no_parking":
@@ -77,7 +99,7 @@ def set_realtime_data(result, zone):
         return zone
     stop_dict = json.loads(result)
     mdsStop = MDSStop(**stop_dict)
-    zone.stop.realtime_data = stop.RealtimeStopData(
+    zone.stop.realtime_data = stop_mod.RealtimeStopData(
         last_reported = mdsStop.last_reported,
         status = mdsStop.status,
         num_vehicles_available = mdsStop.num_vehicles_available,
@@ -86,7 +108,7 @@ def set_realtime_data(result, zone):
     )
     return zone
 
-def look_up_realtime_data(zones):
+def look_up_realtime_data(zones: list[Zone]):
     with redis_helper.get_resource() as r:
         pipe = r.pipeline()
         for zone in zones:
@@ -100,4 +122,12 @@ def look_up_realtime_data(zones):
                 zones[zone_index] = set_realtime_data(results[result_index], zone)
                 result_index += 1
     return zones
-        
+
+def check_if_user_has_access_to_zone_based_on_municipality(municipality, acl):
+    if acl.is_admin:
+        return True
+    if not acl.is_allowed_to_edit:
+        raise HTTPException(status_code=403, detail="User is not allowed to modify zones in this municipality, check ACL.")
+    if municipality in acl.municipalities:
+        return True
+    raise HTTPException(status_code=403, detail="User is not allowed to modify zones in this municipality, check ACL.")

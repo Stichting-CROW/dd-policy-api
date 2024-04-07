@@ -1,8 +1,10 @@
 from psycopg2 import pool
-from psycopg2.extras import RealDictCursor
+from psycopg2.extras import RealDictCursor, register_uuid
+import psycopg2.extras
 from contextlib import contextmanager
 import os
 
+register_uuid()
 class DBHelper:
     def __init__(self, conn_str):
         self._connection_pool = None
@@ -18,6 +20,7 @@ class DBHelper:
 
         conn = self._connection_pool.getconn()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
+        
         try:
             yield cursor, conn
         finally:
