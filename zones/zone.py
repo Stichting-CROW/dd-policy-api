@@ -43,9 +43,9 @@ class Zone(BaseModel):
     retire_date: datetime | None = None
     stop: stop_mod.Stop | None = None
     no_parking: no_parking_mod.NoParking | None = None
-    created_at: datetime
-    modified_at: datetime
-    phase: str
+    created_at: datetime | None = None
+    modified_at: datetime | None = None
+    phase: str | None = None
 
 def convert_zones(zone_rows):
     results = []

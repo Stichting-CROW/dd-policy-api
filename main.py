@@ -61,7 +61,6 @@ def get_zones_private(
 def get_zones_public(municipality: Union[str, None] = None, geography_types: list[zone.GeographyType] = Query(default=[])):
     return get_zones.get_public_zones(municipality=municipality, geography_types=geography_types)
 
-
 @app.get("/public/service_area")
 def get_zones_public(municipalities: list[str] = Query(), operators: list[str] = Query()):
     return get_service_areas.get_service_areas(municipalities=municipalities, operators=operators)

@@ -45,10 +45,6 @@ def update_zone(cur, old_zone, new_zone):
         new_geography_type(cur, new_zone)
     if geography_should_be_updated(old_zone, new_zone):
         update_geography(cur, old_zone, new_zone)
-    if old_zone.published and not new_zone.published and old_zone.geography_id == new_zone.geography_id:
-        raise HTTPException(status_code=422, detail="You can't unpublish a geography.")
-    if not old_zone.published and new_zone.published:
-        publish_geography(cur, new_zone)
         
 
 def new_geography_type(cur, new_zone):
