@@ -2,7 +2,6 @@
 from db_helper import db_helper
 import json
 from fastapi import HTTPException
-import zones.generate_policy as generate_policy
 from zones.zone import Zone
 
 def create_single_zone(cur, zone: Zone, user):
@@ -43,7 +42,7 @@ def create_zone(zone, user):
             raise HTTPException(status_code=500, detail="DB problem, check server log for details.")
 
 def create_classic_zone(cur, data):
-    if not check_if_zone_is_valid(cur, data):
+    if not check_if_zone_is_valid(cur, data.area.geometry.json(), data.municipality):
         raise HTTPException(status_code=403, detail="Zone not completely within borders municipality.")
     stmt = """
         INSERT INTO zones
@@ -84,11 +83,10 @@ def create_stop(cur, data):
         VALUES 
         (%s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326), %s, %s, %s, %s)
     """
-    print("execute.")
     cur.execute(stmt, (str(stop.stop_id), data.name, stop.location.geometry.json(), 
         json.dumps(stop.status), json.dumps(stop.capacity), str(data.geography_id), stop.is_virtual))
 
-def check_if_zone_is_valid(cur, data):
+def check_if_zone_is_valid(cur, geometry, municipality):
     stmt = """  
     SELECT ST_WITHIN(
         ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326), 
@@ -100,7 +98,7 @@ def check_if_zone_is_valid(cur, data):
         limit 1) 
     ) as is_valid;
     """
-    cur.execute(stmt, (data.area.geometry.json(), data.municipality))
+    cur.execute(stmt, (geometry, municipality))
     result = cur.fetchone()
     if result == None:
         return False

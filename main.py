@@ -36,12 +36,8 @@ def publish_zones_route(publish_zone_request: publish_zones.PublishZoneRequest, 
 def make_concept_route(make_concept_request: make_concept.MakeConceptRequest, current_user: access_control.User = Depends(access_control.get_current_user)):
     return make_concept.make_concept_route(make_concept_request=make_concept_request, current_user=current_user)
 
-# Edit zone
-# When not published, an existing geography can be edited.
-# When published the current geography will be replaced by a new geography, the old one will be retired. 
-# If only the stop and no_parking objects are edited the geography isn't replaced. 
-@app.put("/admin/zone")
-def update_zone(zone: zone.Zone, current_user: access_control.User = Depends(access_control.get_current_user)):
+@app.patch("/admin/zone")
+def update_zone(zone: zone.EditZone, current_user: access_control.User = Depends(access_control.get_current_user)):
     return edit_zone.edit_zone(zone, current_user)
 
 @app.delete("/admin/zone/{geography_uuid}", status_code=204)

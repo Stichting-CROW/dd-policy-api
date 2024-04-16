@@ -4,7 +4,7 @@ from uuid import UUID, uuid1
 from datetime import datetime, timezone
 from pydantic import AwareDatetime
 from fastapi import HTTPException
-from zones.get_zones import query_zone_by_id
+from zones.get_zones import get_zone_by_id
 from authorization import access_control
 from db_helper import db_helper
 from zones.zone import check_if_user_has_access_to_zone_based_on_municipality
@@ -13,8 +13,6 @@ class PublishZoneRequest(BaseModel):
     geography_ids: list[UUID]
     publish_on: AwareDatetime
     effective_on: AwareDatetime
-
-
 
 
 def publish_zones_query(cur, publish_zones_request: PublishZoneRequest, geography_ids):
@@ -70,14 +68,15 @@ def publish_zones(cur, publish_zones_request: PublishZoneRequest, user):
     to_retire = []
     # This code could be optimized
     for geography_id in publish_zones_request.geography_ids:
-        zone = query_zone_by_id(cur, geography_id)
-        check_if_user_has_access_to_zone_based_on_municipality(zone["municipality"], user.acl)
-        print(zone)
+        zone = get_zone_by_id(cur, geography_id)
+        if zone.geography_type == "monitoring":
+            raise HTTPException(400, detail=f"It's not possible to publish a monitoring zone: {geography_id}")
+        check_if_user_has_access_to_zone_based_on_municipality(zone.municipality, user.acl)
         if zone == None:
             raise HTTPException(404, f"zone {geography_id} doesn't exists, try again.")
-        if zone["phase"] not in ["concept", "committed_concept", "retirement_concept", "committed_retirement_concept"]:
+        if zone.phase not in ["concept", "committed_concept", "retirement_concept", "committed_retirement_concept"]:
             raise HTTPException(400, f"it's not possible to publish (or update the publication date of this zone) because {geography_id} is not a concept or committed_concept")
-        if zone["phase"] in ["retirement_concept", "committed_retirement_concept"]:
+        if zone.phase in ["retirement_concept", "committed_retirement_concept"]:
             to_retire.append(geography_id)
         else:
             to_publish.append(geography_id)

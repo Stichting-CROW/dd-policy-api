@@ -41,7 +41,7 @@ def query_zones(cur, municipality, geography_types, phases):
     stmt = """
         SELECT *
         FROM (
-            SELECT geographies.geography_id, geographies.name, description, geography_type, 
+            SELECT geographies.geography_id, internal_id, geographies.name, description, geography_type, 
             effective_date, published_date, propose_retirement, published_retire_date, retire_date, prev_geographies,
             zones.zone_id, zones.municipality, 
             json_build_object(
@@ -67,14 +67,11 @@ def query_zones(cur, municipality, geography_types, phases):
                 'geometry',   ST_AsGeoJSON( stops.location)::json,
                 'properties',  json_build_object()
             ) as location,
-            stops.status, stops.capacity, stops.is_virtual,
-            no_parking_policy.start_date, no_parking_policy.end_date
+            stops.status, stops.capacity, stops.is_virtual
             FROM geographies
             JOIN zones
             USING (zone_id)
             LEFT JOIN stops
-            USING (geography_id)
-            LEFT JOIN no_parking_policy
             USING (geography_id)
             WHERE 
             ((true = %s) or (zones.municipality = %s))
@@ -90,11 +87,12 @@ def get_zone_by_id(cur, geography_uuid):
     result = query_zone_by_id(cur, geography_uuid)
     if result == None:
         raise HTTPException(status_code=404, detail=f"Geography {geography_uuid} doesn't exist.")
+    print(result)
     return zone_mod.convert_zone(result)
 
 def query_zone_by_id(cur, geography_uuid):
     stmt = """
-        SELECT geographies.geography_id, geographies.name, description, geography_type, 
+        SELECT geographies.geography_id, internal_id, geographies.name, description, geography_type, 
         effective_date, published_date, propose_retirement, published_retire_date, retire_date, prev_geographies,
         zones.zone_id, zones.municipality, 
         json_build_object(
@@ -120,14 +118,11 @@ def query_zone_by_id(cur, geography_uuid):
             'geometry',   ST_AsGeoJSON( stops.location)::json,
             'properties',  json_build_object()
         ) as location,
-        stops.status, stops.capacity, stops.is_virtual,
-        no_parking_policy.start_date, no_parking_policy.end_date
+        stops.status, stops.capacity, stops.is_virtual
         FROM geographies
         JOIN zones
         USING (zone_id)
         LEFT JOIN stops
-        USING (geography_id)
-        LEFT JOIN no_parking_policy
         USING (geography_id)
         WHERE 
         geographies.geography_id = %s

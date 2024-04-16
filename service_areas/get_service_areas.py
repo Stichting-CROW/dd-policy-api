@@ -2,7 +2,6 @@ from db_helper import db_helper
 from fastapi import HTTPException
 import zones.zone as zone
 import zones.stop as stop
-import zones.no_parking as no_parking
 
 from service_areas.service_area import ServiceArea
 from geojson_pydantic import FeatureCollection

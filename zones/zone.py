@@ -2,7 +2,6 @@ from pydantic import BaseModel, Field
 from typing import Dict, Union
 from geojson_pydantic import Feature, Polygon, MultiPolygon
 import zones.stop as stop_mod
-import zones.no_parking as no_parking_mod
 from uuid import UUID, uuid1
 from enum import Enum
 from datetime import datetime
@@ -43,7 +42,6 @@ class Zone(BaseModel):
     published_retire_date: datetime | None = None
     retire_date: datetime | None = None
     stop: stop_mod.Stop | None = None
-    no_parking: no_parking_mod.NoParking | None = None
     created_at: datetime | None = None
     modified_at: datetime | None = None
     created_by: str | None = None
@@ -70,6 +68,7 @@ def convert_zones(zone_rows):
 def convert_zone(zone_row):
     result = Zone(
         zone_id=zone_row["zone_id"],
+        internal_id=zone_row["internal_id"],
         area=zone_row["area"],
         name=zone_row["name"],
         municipality=zone_row["municipality"],
@@ -80,7 +79,6 @@ def convert_zone(zone_row):
         published_date=zone_row["published_date"],
         retire_date=zone_row["retire_date"],
         stop=None,
-        no_parking=None,
         created_at=zone_row["created_at"],
         modified_at=zone_row["modified_at"],
         created_by=zone_row["created_by"],
@@ -92,8 +90,6 @@ def convert_zone(zone_row):
     print(result.geography_type)
     if result.geography_type == "stop":
         result.stop = convert_stop(stop_row=zone_row)
-    elif result.geography_type == "no_parking":
-        result.no_parking = convert_no_parking(no_parking_row=zone_row)
     return result
 
 def convert_stop(stop_row):
@@ -103,12 +99,6 @@ def convert_stop(stop_row):
         status=stop_row["status"],
         capacity=stop_row["capacity"],
         is_virtual=stop_row["is_virtual"],
-    )
-
-def convert_no_parking(no_parking_row):
-    return no_parking_mod.NoParking(
-        start_date=no_parking_row["start_date"],
-        end_date=no_parking_row["end_date"]
     )
 
 def set_realtime_data(result, zone):

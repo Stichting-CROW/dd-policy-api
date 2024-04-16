@@ -1,29 +1,32 @@
 from fastapi import HTTPException
 from db_helper import db_helper
 from mds import geography
-from zones.create_zone import create_no_parking_policy, create_stop, check_if_zone_is_valid, create_classic_zone, create_geography
-from zones.delete_zone import delete_no_parking, delete_stops
+from zones.create_zone import check_if_zone_is_valid, create_stop
+from zones.delete_zone import delete_stops
 from zones.get_zones import get_zone_by_id
 from zones.generate_policy import generate_policy
+from zones.zone import Zone, EditZone
+from zones.stop import Stop
+from authorization import access_control
 from uuid import uuid1
 import json
 import datetime
 import traceback
 from pydantic import BaseModel, Field
+from fastapi import HTTPException
 
 
-def edit_zone(new_zone, user):
+def edit_zone(new_zone, user: access_control.User):
     with db_helper.get_resource() as (cur, conn):
         try:
             old_zone = get_zone_by_id(cur, new_zone.geography_id)
-            check_if_user_has_access(old_zone.municipality, new_zone.municipality, user.acl)
-            print(old_zone)
-            print(new_zone)
-            if old_zone != new_zone:
-                update_zone(cur, old_zone, new_zone)
+            check_if_edit_is_allowed(old_zone=old_zone, new_zone=new_zone)
+            check_if_user_has_access(old_zone.municipality, user.acl)
+           
+            merged_zone = update_zone(cur, old_zone, new_zone, user.email)
             conn.commit()
             print("commited")
-            return new_zone
+            return merged_zone
         except HTTPException as e:
             conn.rollback()
             raise e
@@ -33,154 +36,136 @@ def edit_zone(new_zone, user):
             print(e)
             raise HTTPException(status_code=500, detail="DB problem, check server log for details. \n\n" + str(e))
 
+def check_if_edit_is_allowed(old_zone: Zone, new_zone: EditZone):
+    if old_zone.phase == "concept":
+        return
+    if new_zone.area:
+        raise HTTPException(status_code=400, detail=f"It's not possible to edit area when zone is in {old_zone.phase}")
+    if new_zone.name:
+        raise HTTPException(status_code=400, detail=f"It's not possible to edit name when zone is in {old_zone.phase}")
+    if new_zone.description:
+        raise HTTPException(status_code=400, detail=f"It's not possible to edit description when zone is in {old_zone.phase}")
+    if new_zone.geography_type:
+        raise HTTPException(status_code=400, detail=f"It's not possible to edit geography_type when zone is in {old_zone.phase}")
+    
+    if new_zone.stop and new_zone.stop.is_virtual:
+        raise HTTPException(status_code=400, detail=f"It's not possible to edit stop.is_virtual when zone is in {old_zone.phase}")
+    if new_zone.stop and new_zone.stop.location:
+        raise HTTPException(status_code=400, detail=f"It's not possible to edit stop.location when zone is in {old_zone.phase}")
+    return
 
-def update_zone(cur, old_zone, new_zone):
-    print("Check stop should be updated:")
-    print(stop_should_be_updated(old_zone, new_zone))
-    if stop_should_be_updated(old_zone, new_zone):
-        print("Update stop")
-        new_zone.stop.stop_id = old_zone.stop.stop_id
-        update_stop(cur, new_zone)
-    if no_parking_should_be_updated(old_zone, new_zone):
-        update_no_parking(cur, new_zone)
-    if old_zone.geography_type != new_zone.geography_type:
-        new_geography_type(cur, new_zone)
-    if geography_should_be_updated(old_zone, new_zone):
-        update_geography(cur, old_zone, new_zone)
-        
+def update_zone(cur, old_zone: Zone, new_zone: EditZone, email: str):
+    is_new_geography_type = new_zone.geography_type and new_zone.geography_type == "stop" and old_zone.geography_type != "stop"
+    if (is_new_geography_type and (new_zone.stop == None or new_zone.stop.location == None or new_zone.stop.is_virtual == None or
+          new_zone.stop.status == None or new_zone.stop.capacity == None)):
+        raise HTTPException(status_code=400, detail="stop object with location, is_virtual, status and capacity should be provided")
+    
+    if new_zone.area:
+        old_zone.area = new_zone.area
+    if new_zone.name:
+        old_zone.name = new_zone.name
+    if new_zone.description:
+        old_zone.description = new_zone.description
+    if new_zone.internal_id:
+        old_zone.internal_id = new_zone.internal_id
+    if new_zone.geography_type:
+        old_zone.geography_type = new_zone.geography_type
+    
+    
 
-def new_geography_type(cur, new_zone):
-    # Delete old no_parking and stops.
-    delete_no_parking(cur, new_zone.geography_id)
-    delete_stops(cur, new_zone.geography_id)
-    # Creates no_parking_policy or stop when applicable.
-    create_no_parking_policy(cur, new_zone)
-    create_stop(cur, new_zone)
+    # check stop fields.
+    if new_zone.stop and not old_zone.stop:
+        old_zone.stop = Stop(
+            location=new_zone.stop.location,
+            status=new_zone.stop.status,
+            capacity=new_zone.stop.capacity,
+            is_virtual=new_zone.stop.is_virtual
+        )
+    elif new_zone.stop:
+        if new_zone.stop.location:
+            old_zone.stop.location = new_zone.stop.location
+        if new_zone.stop.is_virtual:
+            old_zone.stop.is_virtual = new_zone.stop.is_virtual
+        if new_zone.stop.status:
+            old_zone.stop.status = new_zone.stop.status
+        if new_zone.stop.capacity:
+            old_zone.stop.capacity
+    merged_zone = old_zone
+    merged_zone.last_modified_by = email
 
-def geography_should_be_updated(old_zone, new_zone):
-    return (
-        old_zone.area != new_zone.area or
-        old_zone.name != new_zone.name or
-        old_zone.municipality != new_zone.municipality or
-        old_zone.description != new_zone.description or
-        old_zone.geography_type != new_zone.geography_type
-    )
+    print(merged_zone)
+    merged_zone.modified_at = update_geography(cur, merged_zone)
+    update_classic_zone(cur, merged_zone)
+    if merged_zone.geography_type == "stop" and is_new_geography_type:
+        create_stop(cur, merged_zone)
+    elif merged_zone.geography_type == "stop":
+        update_stop(cur, merged_zone)
+    else: 
+        merged_zone.stop = None
+        delete_stops(cur, merged_zone.geography_id)
+    return merged_zone
 
-def stop_should_be_updated(old_zone, new_zone):
-    print(old_zone.stop)
-    print(new_zone.stop)
-    print("checks")
-    print(old_zone.stop != new_zone.stop)
-    print(old_zone.stop == "stop")
-    print(new_zone.stop == "stop")
-    print(old_zone.name != new_zone.name)
-    return (
-        old_zone.geography_type == "stop" and
-        new_zone.geography_type == "stop" and
-        (old_zone.name != new_zone.name or
-        old_zone.stop != new_zone.stop)
-    )
-
-def update_stop(cur, new_zone):
-    stop = new_zone.stop
+def update_stop(cur, merged_zone: Zone):
+    stop = merged_zone.stop
     stmt = """
         UPDATE stops
         SET name = %s,
         location = ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326),
         status = %s, 
-        capacity = %s
+        capacity = %s,
+        is_virtual = %s
         WHERE 
-        stop_id = %s
+        geography_id = %s
     """
-    cur.execute(stmt, (new_zone.name, stop.location.geometry.json(), 
-        json.dumps(stop.status), json.dumps(stop.capacity), str(stop.stop_id)))
+    cur.execute(stmt, (merged_zone.name, stop.location.geometry.model_dump_json(), 
+        json.dumps(stop.status), json.dumps(stop.capacity), stop.is_virtual, str(merged_zone.geography_id)))
     if cur.rowcount == 0:
         raise HTTPException(status_code=404, detail="No stop with this stop_id exists.")
 
-def no_parking_should_be_updated(old_zone, new_zone):
-    return (
-        old_zone.geography_type == "no_parking" and
-        new_zone.geography_type == "no_parking" and
-        old_zone.no_parking != new_zone.no_parking
-    )
 
-def update_no_parking(cur, new_zone):
-    no_parking = new_zone.no_parking
-    stmt = """
-        UPDATE no_parking_policy
-        SET start_date = %s, 
-        end_date = %s
-        WHERE geography_id = %s
-    """
-    cur.execute(stmt, (no_parking.start_date, no_parking.end_date, str(new_zone.geography_id)))
-    if cur.rowcount == 0:
-        raise HTTPException(status_code=404, detail="No no_parking policy with this geography_id exists.")
-    generate_policy(cur, new_zone)
-
-def check_if_user_has_access(old_municipality, new_municipality, acl):
+def check_if_user_has_access(municipality, acl):
     if acl.is_admin:
         return True
-    if old_municipality not in acl.municipalities:
-        raise HTTPException(status_code=403, detail="User is not allowed to change municipality of this geography, check ACL.")
-    if new_municipality not in acl.municipalities:
-        raise HTTPException(status_code=403, detail="User is not allowed to edit zone in this municipality, check ACL.")
+    if municipality not in acl.municipalities:
+        raise HTTPException(status_code=403, detail="User is not allowed to change zones in this municipality.")
     if not acl.is_allowed_to_edit:
         raise HTTPException(status_code=403, detail="User is not allowed to edit zones.")
     return True
 
-def update_geography(cur, old_zone, new_zone):
-    print("Update geography")
-    update_existing_geography(cur, new_zone)
+def update_geography(cur, merged_zone: Zone):
+    update_classic_zone(cur, merged_zone)
+    return update_geography_record(cur, merged_zone)
 
-def update_existing_geography(cur, new_zone):
-    update_classic_zone(cur, new_zone)
-    update_geography_record(cur, new_zone)
-    
-def update_classic_zone(cur, data):
-    if not check_if_zone_is_valid(cur, data):
+def update_classic_zone(cur, zone: Zone):
+    if not check_if_zone_is_valid(cur, zone.area.geometry.model_dump_json(), zone.municipality):
         raise HTTPException(status_code=403, detail="Zone not completely within borders municipality.")
     stmt = """
-        UPDATE zones z
+        UPDATE zones
         SET area = ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326),
-        name = %s, 
-        municipality = %s
-        FROM geographies g
-        WHERE z.zone_id = g.zone_id
-        AND g.geography_id = %s
+        name = %s
+        FROM geographies
+        WHERE zones.zone_id = geographies.zone_id
+        AND geographies.geography_id = %s
     """
-    cur.execute(stmt, (data.area.geometry.json(), data.name, data.municipality, str(data.geography_id)))
+    cur.execute(stmt, (zone.area.geometry.model_dump_json(), zone.name, str(zone.geography_id)))
     if cur.rowcount == 0:
         raise HTTPException(status_code=404, detail="No zone for this geography_id.")
 
-def update_geography_record(cur, data):
+def update_geography_record(cur, zone: Zone):
     stmt = """
         UPDATE geographies
         SET name = %s,
         description = %s,
         geography_type = %s,
-        effective_date = %s,
-        published_date = %s,
-        publish = %s
+        internal_id = %s,
+        modified_at = NOW(),
+        last_modified_by = %s
         WHERE geography_id = %s
+        RETURNING modified_at
     """
-    cur.execute(stmt, (data.name, data.description, data.geography_type, 
-        data.effective_date, data.published_date, data.published, str(data.geography_id)))
+    cur.execute(stmt, (zone.name, zone.description, zone.geography_type, zone.internal_id, zone.last_modified_by, str(zone.geography_id)))
     if cur.rowcount == 0:
         raise HTTPException(status_code=404, detail="No zone for this geography_id.")
+    return cur.fetchone()["modified_at"]
 
-def update_geography_id_stop(cur, old_geography_id, new_geography_id):
-    stmt = """
-        UPDATE stops
-        SET geography_id = %s
-        WHERE geography_id = %s
-    """
-    cur.execute(stmt, (str(new_geography_id), str(old_geography_id)))
 
-def update_geography_id_no_parking(cur, old_geography_id, new_geography_id):
-    stmt = """
-        UPDATE no_parking_policy
-        SET geography_id = %s
-        WHERE geography_id = %s
-    """
-    cur.execute(stmt, (str(new_geography_id), str(old_geography_id)))
-    
