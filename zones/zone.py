@@ -33,6 +33,7 @@ class Zone(BaseModel):
     municipality: str
     # variables relating to geography because there is a 1 to 1 relation
     geography_id: UUID | None = Field(default_factory=uuid1)
+    internal_id: str | None = None
     description: str
     geography_type: GeographyType
     prev_geographies: list[UUID] = []
@@ -45,7 +46,20 @@ class Zone(BaseModel):
     no_parking: no_parking_mod.NoParking | None = None
     created_at: datetime | None = None
     modified_at: datetime | None = None
+    created_by: str | None = None
+    last_modified_by: str | None = None
     phase: str | None = None
+
+class EditZone(BaseModel):
+    zone_id: int
+    geography_id: UUID
+    area: PolygonFeatureModel | None = None
+    name: str | None = None
+    # variables relating to geography because there is a 1 to 1 relation
+    internal_id: str | None = None
+    description: str | None = None
+    geography_type: GeographyType | None = None
+    stop: stop_mod.EditStop | None = None 
 
 def convert_zones(zone_rows):
     results = []
@@ -69,6 +83,8 @@ def convert_zone(zone_row):
         no_parking=None,
         created_at=zone_row["created_at"],
         modified_at=zone_row["modified_at"],
+        created_by=zone_row["created_by"],
+        last_modified_by=zone_row["last_modified_by"],
         phase=zone_row["phase"]
     )
     if zone_row["prev_geographies"]:
@@ -85,7 +101,8 @@ def convert_stop(stop_row):
         stop_id=stop_row["stop_id"],
         location=stop_row["location"],
         status=stop_row["status"],
-        capacity=stop_row["capacity"]
+        capacity=stop_row["capacity"],
+        is_virtual=stop_row["is_virtual"],
     )
 
 def convert_no_parking(no_parking_row):

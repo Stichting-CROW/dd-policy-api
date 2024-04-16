@@ -17,4 +17,10 @@ class Stop(BaseModel):
     status: Dict[str, bool]
     capacity: Dict[str, int]
     realtime_data: RealtimeStopData | None = None
+    is_virtual: bool
 
+class EditStop(BaseModel):
+    location: PointFeatureModel | None = None
+    is_virtual: bool | None = None
+    status: Dict[str, bool] | None = None
+    capacity: Dict[str, int] | None = None

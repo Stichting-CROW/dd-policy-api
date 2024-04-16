@@ -49,7 +49,7 @@ def query_zones(cur, municipality, geography_types, phases):
                 'geometry',   ST_AsGeoJSON(zones.area)::json,
                 'properties',  json_build_object()
             ) as area,
-            created_at, modified_at,
+            created_at, modified_at, created_by, last_modified_by,
             CASE 
                 WHEN (published_date IS NULL) THEN 'concept'
                 WHEN (propose_retirement = true AND published_retire_date IS NULL) THEN 'retirement_concept' 
@@ -67,7 +67,7 @@ def query_zones(cur, municipality, geography_types, phases):
                 'geometry',   ST_AsGeoJSON( stops.location)::json,
                 'properties',  json_build_object()
             ) as location,
-            stops.status, stops.capacity,
+            stops.status, stops.capacity, stops.is_virtual,
             no_parking_policy.start_date, no_parking_policy.end_date
             FROM geographies
             JOIN zones
@@ -102,7 +102,7 @@ def query_zone_by_id(cur, geography_uuid):
             'geometry',   ST_AsGeoJSON(zones.area)::json,
             'properties',  json_build_object()
         ) as area,
-        created_at, modified_at,
+        created_at, modified_at, created_by, last_modified_by,
         CASE 
             WHEN (published_date IS NULL) THEN 'concept'
             WHEN (propose_retirement = true AND published_retire_date IS NULL) THEN 'retirement_concept' 
@@ -120,7 +120,7 @@ def query_zone_by_id(cur, geography_uuid):
             'geometry',   ST_AsGeoJSON( stops.location)::json,
             'properties',  json_build_object()
         ) as location,
-        stops.status, stops.capacity,
+        stops.status, stops.capacity, stops.is_virtual,
         no_parking_policy.start_date, no_parking_policy.end_date
         FROM geographies
         JOIN zones

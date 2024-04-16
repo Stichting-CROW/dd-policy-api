@@ -12,6 +12,7 @@ class ACL(BaseModel):
     municipalities: Optional[set] = set()
 
 class User(BaseModel):
+    email: str
     token: str
     acl: ACL
 
@@ -20,15 +21,16 @@ def get_user_acl(cur, token):
     # Verification is performed by kong (reverse proxy), 
     # therefore token is not verified for a second time so that the secret is only stored there.
     result = jwt.decode(encoded_token, options={"verify_signature": False})
-    return query_acl(cur, result["email"])
+    return query_acl(cur, result["email"]), result["email"]
 
 async def get_current_user(authorization: Union[str, None] = Header(None)):
     if not authorization:
         raise HTTPException(401, "authorization header missing.")
     with db_helper.get_resource() as (cur, _):
         try:
-            result = get_user_acl(cur, authorization)
+            result, email = get_user_acl(cur, authorization)
             return User(
+                email=email,
                 token=authorization,
                 acl=result
             )
