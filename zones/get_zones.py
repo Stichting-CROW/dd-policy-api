@@ -87,7 +87,6 @@ def get_zone_by_id(cur, geography_uuid):
     result = query_zone_by_id(cur, geography_uuid)
     if result == None:
         raise HTTPException(status_code=404, detail=f"Geography {geography_uuid} doesn't exist.")
-    print(result)
     return zone_mod.convert_zone(result)
 
 def query_zone_by_id(cur, geography_uuid):

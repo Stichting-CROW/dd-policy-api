@@ -1,7 +1,7 @@
 from db_helper import db_helper
 from fastapi import HTTPException
 import json
-from datetime import timezone
+from datetime import timezone, datetime
 
 from pydantic import BaseModel
 from typing import Optional, List
@@ -35,13 +35,12 @@ def get_geography(geography_uuid):
 def query_geography(cur, geography_uuid):
     stmt = """
         SELECT geography_id, zone_id, geographies.name, description, 
-        effective_date, published_date, retire_date, ST_AsGeoJSON(area) as geojson
+        effective_date, published_date, retire_date, published_retire_date, ST_AsGeoJSON(area) as geojson
         FROM geographies
         JOIN zones
         USING(zone_id)
-        WHERE publish = true and geography_id = %s
+        WHERE NOW() => published_date AND geography_id = %s
     """
-    print(geography_uuid)
     cur.execute(stmt, (str(geography_uuid),))
     return cur.fetchone()
 
@@ -54,6 +53,9 @@ def generate_geography_response(result):
     )
 
 def convert_geography_row(row):
+    published_retire_date = row["published_retire_date"]
+    if published_retire_date and published_retire_date <= datetime.now():
+        retire_date = None
     return Geography(
         name=row["name"],
         description=row["description"],
@@ -61,7 +63,7 @@ def convert_geography_row(row):
         geography_json=convert_record_to_feature_collection(row["geojson"]),
         effective_date=convert_datetime_to_millis(row["effective_date"]),
         published_date=convert_datetime_to_millis(row["published_date"]),
-        retire_data=convert_datetime_to_millis(row["retire_date"])
+        retire_data=convert_datetime_to_millis(retire_date)
     )
 
 def convert_datetime_to_millis(dt):

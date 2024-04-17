@@ -4,7 +4,7 @@ from mds import geography
 from zones.create_zone import check_if_zone_is_valid, create_stop
 from zones.delete_zone import delete_stops
 from zones.get_zones import get_zone_by_id
-from zones.generate_policy import generate_policy
+from mds.generate_policy import generate_policy
 from zones.zone import Zone, EditZone
 from zones.stop import Stop
 from authorization import access_control
@@ -84,12 +84,12 @@ def update_zone(cur, old_zone: Zone, new_zone: EditZone, email: str):
     elif new_zone.stop:
         if new_zone.stop.location:
             old_zone.stop.location = new_zone.stop.location
-        if new_zone.stop.is_virtual:
+        if new_zone.stop.is_virtual != None:
             old_zone.stop.is_virtual = new_zone.stop.is_virtual
         if new_zone.stop.status:
             old_zone.stop.status = new_zone.stop.status
         if new_zone.stop.capacity:
-            old_zone.stop.capacity
+            old_zone.stop.capacity = new_zone.stop.capacity
     merged_zone = old_zone
     merged_zone.last_modified_by = email
 

@@ -23,11 +23,11 @@ def get_geographies():
 def query_geographies(cur):
     stmt = """
         SELECT geography_id, zone_id, geographies.name, description, 
-        effective_date, published_date, retire_date, ST_AsGeoJSON(area) as geojson
+        effective_date, published_date, retire_date, published_retire_date, ST_AsGeoJSON(area) as geojson
         FROM geographies
         JOIN zones
         USING(zone_id)
-        WHERE publish = true
+        WHERE NOW() => published_date
     """
     cur.execute(stmt)
     return cur.fetchall()
