@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import FastAPI, Depends, Header, Query, File, UploadFile, Body, HTTPException
 from fastapi.responses import StreamingResponse
 
-from zones import create_zone, zone, get_zones, delete_zone, edit_zone, publish_zones, make_concept
+from zones import create_zone, zone, get_zones, delete_zone, edit_zone, publish_zones, make_concept, propose_retirement
 from db_helper import db_helper
 from mds import geographies, geography, stops, stop, policies, policy
 from kml import kml_export, kml_import
@@ -35,6 +35,10 @@ def publish_zones_route(publish_zone_request: publish_zones.PublishZoneRequest, 
 @app.post("/admin/zones/make_concept", status_code=204)
 def make_concept_route(make_concept_request: make_concept.MakeConceptRequest, current_user: access_control.User = Depends(access_control.get_current_user)):
     return make_concept.make_concept_route(make_concept_request=make_concept_request, current_user=current_user)
+
+@app.post("/admin/zones/propose_retirement", status_code=204)
+def propose_retirement_route(propose_retirement_request: propose_retirement.ProposeRetirementRequest, current_user: access_control.User = Depends(access_control.get_current_user)):
+    return propose_retirement.propose_retirement_route(propose_retirement_request= propose_retirement_request, current_user=current_user)
 
 @app.patch("/admin/zone")
 def update_zone(zone: zone.EditZone, current_user: access_control.User = Depends(access_control.get_current_user)):

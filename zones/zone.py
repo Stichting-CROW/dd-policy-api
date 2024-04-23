@@ -78,6 +78,7 @@ def convert_zone(zone_row):
         effective_date=zone_row["effective_date"],
         published_date=zone_row["published_date"],
         retire_date=zone_row["retire_date"],
+        published_retire_date=zone_row["published_retire_date"],
         stop=None,
         created_at=zone_row["created_at"],
         modified_at=zone_row["modified_at"],
