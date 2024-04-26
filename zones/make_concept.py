@@ -30,7 +30,8 @@ def move_published_zone_back_to_concept(cur, old_zone: Zone, user: access_contro
     )
     stmt = """
         UPDATE geographies
-        SET propose_retirement = true
+        SET propose_retirement = true,
+        last_modified
         WHERE geography_id = %s
     """
     cur.execute(stmt, (old_zone.geography_id,))

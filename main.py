@@ -107,9 +107,9 @@ def get_stops_route(municipality: Union[str, None] = None):
 def get_stop_route(policy_uuid: UUID):
     return policies.get_policy(policy_uuid)
 
-@app.get("/kml/export")
-def get_kml_route(municipality: Union[str, None] = None):
-    result = kml_export.export(municipality)
+@app.post("/kml/export")
+def get_kml_route(kml_export_request: kml_export.ExportKMLRequest):
+    result = kml_export.export(kml_export_request)
     return StreamingResponse(
             iter([result.getvalue()]), 
             media_type="application/x-zip-compressed",
