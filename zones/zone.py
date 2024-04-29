@@ -56,7 +56,25 @@ class EditZone(BaseModel):
     internal_id: str | None = None
     description: str | None = None
     geography_type: GeographyType | None = None
-    stop: stop_mod.EditStop | None = None 
+    stop: stop_mod.EditStop | None = None
+
+class BulkEditZone(BaseModel):
+    geography_type: GeographyType | None = None
+    stop: stop_mod.EditStop | None = None
+
+def convert_to_edit_zone(bulk_edit_zone: BulkEditZone, geography_id: UUID):
+    stop = None
+    if bulk_edit_zone.stop:
+        stop = stop_mod.EditStop(
+            status=bulk_edit_zone.stop.status,
+            capacity=bulk_edit_zone.stop.capacity,
+            is_virtual=bulk_edit_zone.stop.is_virtual,
+        )
+    return EditZone(
+        geography_id=geography_id,
+        geography_type=bulk_edit_zone.geography_type,
+        stop=stop,
+    ) 
 
 def convert_zones(zone_rows):
     results = []
@@ -87,7 +105,6 @@ def convert_zone(zone_row):
     )
     if zone_row["prev_geographies"]:
         result.prev_geographies = zone_row["prev_geographies"]
-    print(result.geography_type)
     if result.geography_type == "stop":
         result.stop = convert_stop(stop_row=zone_row)
     return result

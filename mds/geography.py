@@ -75,7 +75,6 @@ def convert_datetime_to_millis(dt):
 
 def convert_record_to_feature_collection(geojson):
     geometry = geometries.parse_geometry_obj(json.loads(geojson))
-    print(geometry.type)
     feature = Feature(type="Feature", geometry=geometry, properties={})
     return FeatureCollection(type="FeatureCollection", features=[feature])
     

@@ -27,7 +27,7 @@ def query_geographies(cur, municipality: str):
         FROM geographies
         JOIN zones
         USING(zone_id)
-        WHERE NOW() >= published_date and (retire_date IS NULL or NOW() <= retire_date)
+        WHERE NOW() >= published_date
         AND ((true = %s) or  municipality = %s)
     """
     cur.execute(stmt, (municipality == None, municipality))

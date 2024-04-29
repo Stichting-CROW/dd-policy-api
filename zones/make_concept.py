@@ -16,13 +16,12 @@ class MakeConceptRequest(BaseModel):
     geography_ids: list[UUID]
 
 def move_published_zone_back_to_concept(cur, old_zone: Zone, user: access_control.User):
-    print(old_zone)
+
     new_zone = old_zone.model_copy(deep=True)
     new_zone.geography_id = uuid1()
     new_zone.prev_geographies = [old_zone.geography_id]
     new_zone.published_date = None
     new_zone.effective_date = None
-    print(new_zone)
     new_zone = create_single_zone(
         cur=cur,
         zone=new_zone,

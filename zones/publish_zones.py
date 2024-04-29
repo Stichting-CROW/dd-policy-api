@@ -25,7 +25,7 @@ def publish_zones_query(cur, publish_zones_request: PublishZoneRequest, geograph
         modified_at = NOW()
         WHERE geography_id = ANY(%s)
     """
-    print(geography_ids)
+
     cur.execute(stmt, (publish_zones_request.effective_on, publish_zones_request.publish_on, geography_ids))
 
 def publish_retire_zones_query(cur, publish_zones_request: PublishZoneRequest, geography_ids):
@@ -38,7 +38,6 @@ def publish_retire_zones_query(cur, publish_zones_request: PublishZoneRequest, g
         modified_at = NOW()
         WHERE geography_id = ANY(%s)
     """
-    print(geography_ids)
     cur.execute(stmt, (publish_zones_request.effective_on, publish_zones_request.publish_on, geography_ids))
 
 

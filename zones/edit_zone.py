@@ -5,27 +5,47 @@ from zones.create_zone import check_if_zone_is_valid, create_stop
 from zones.delete_zone import delete_stops
 from zones.get_zones import get_zone_by_id
 from mds.generate_policy import generate_policy
-from zones.zone import Zone, EditZone
-from zones.stop import Stop
+from zones.zone import Zone, EditZone, BulkEditZone, convert_to_edit_zone
+from zones.stop import Stop, PointFeatureModel
 from authorization import access_control
 from uuid import uuid1
 import json
-import datetime
 import traceback
 from pydantic import BaseModel, Field
 from fastapi import HTTPException
+from uuid import UUID
+import shapely
+
+class BulkEditZonesRequest(BaseModel):
+    geography_ids: list[UUID]
+    bulk_edit: BulkEditZone
 
 
-def edit_zone(new_zone, user: access_control.User):
+def edit_zones(edit_zone_request: BulkEditZonesRequest,  user: access_control.User):
     with db_helper.get_resource() as (cur, conn):
         try:
-            old_zone = get_zone_by_id(cur, new_zone.geography_id)
-            check_if_edit_is_allowed(old_zone=old_zone, new_zone=new_zone)
-            check_if_user_has_access(old_zone.municipality, user.acl)
-           
-            merged_zone = update_zone(cur, old_zone, new_zone, user.email)
+            merged_zones = []
+            for geography_id in edit_zone_request.geography_ids:
+                new_zone = convert_to_edit_zone(edit_zone_request.bulk_edit, geography_id=geography_id)
+                merged_zone = edit_single_zone(cur, new_zone=new_zone, user=user)
+                merged_zones.append(merged_zone)
             conn.commit()
-            print("commited")
+            return merged_zones
+        except HTTPException as e:
+            conn.rollback()
+            raise e
+        except Exception as e:
+            conn.rollback()
+            print(traceback.format_exc())
+            print(e)
+            raise HTTPException(status_code=500, detail="DB problem, check server log for details. \n\n" + str(e))
+
+
+def edit_zone(new_zone: EditZone, user: access_control.User):
+    with db_helper.get_resource() as (cur, conn):
+        try:
+            merged_zone = edit_single_zone(cur, new_zone=new_zone, user=user)
+            conn.commit()
             return merged_zone
         except HTTPException as e:
             conn.rollback()
@@ -35,6 +55,14 @@ def edit_zone(new_zone, user: access_control.User):
             print(traceback.format_exc())
             print(e)
             raise HTTPException(status_code=500, detail="DB problem, check server log for details. \n\n" + str(e))
+
+def edit_single_zone(cur, new_zone: EditZone, user: access_control.User):
+    old_zone = get_zone_by_id(cur, new_zone.geography_id)
+    check_if_edit_is_allowed(old_zone=old_zone, new_zone=new_zone)
+    check_if_user_has_access(old_zone.municipality, user.acl)
+    
+    merged_zone = update_zone(cur, old_zone, new_zone, user.email)
+    return merged_zone
 
 def check_if_edit_is_allowed(old_zone: Zone, new_zone: EditZone):
     if old_zone.phase == "concept":
@@ -56,9 +84,9 @@ def check_if_edit_is_allowed(old_zone: Zone, new_zone: EditZone):
 
 def update_zone(cur, old_zone: Zone, new_zone: EditZone, email: str):
     is_new_geography_type = new_zone.geography_type and new_zone.geography_type == "stop" and old_zone.geography_type != "stop"
-    if (is_new_geography_type and (new_zone.stop == None or new_zone.stop.location == None or new_zone.stop.is_virtual == None or
+    if (is_new_geography_type and (new_zone.stop == None or new_zone.stop.is_virtual == None or
           new_zone.stop.status == None or new_zone.stop.capacity == None)):
-        raise HTTPException(status_code=400, detail="stop object with location, is_virtual, status and capacity should be provided")
+        raise HTTPException(status_code=400, detail="stop object with is_virtual, status and capacity should be provided")
     
     if new_zone.area:
         old_zone.area = new_zone.area
@@ -75,8 +103,20 @@ def update_zone(cur, old_zone: Zone, new_zone: EditZone, email: str):
 
     # check stop fields.
     if new_zone.stop and not old_zone.stop:
+        location = new_zone.stop.location
+        if not location:
+            point = shapely.centroid(
+                    shapely.from_geojson(
+                        old_zone.area.geometry.model_dump_json()
+                        )
+                    )
+            location = {
+                "type": "Feature",
+                "geometry": shapely.geometry.mapping(point),
+                "properties": {}
+            }
         old_zone.stop = Stop(
-            location=new_zone.stop.location,
+            location=location,
             status=new_zone.stop.status,
             capacity=new_zone.stop.capacity,
             is_virtual=new_zone.stop.is_virtual
@@ -93,7 +133,6 @@ def update_zone(cur, old_zone: Zone, new_zone: EditZone, email: str):
     merged_zone = old_zone
     merged_zone.last_modified_by = email
 
-    print(merged_zone)
     merged_zone.modified_at = update_geography(cur, merged_zone)
     update_classic_zone(cur, merged_zone)
     if merged_zone.geography_type == "stop" and is_new_geography_type:

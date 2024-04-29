@@ -24,3 +24,8 @@ class EditStop(BaseModel):
     is_virtual: bool | None = None
     status: Dict[str, bool] | None = None
     capacity: Dict[str, int] | None = None
+
+class BulkEditStop(BaseModel):
+    is_virtual: bool | None = None
+    status: Dict[str, bool] | None = None
+    capacity: Dict[str, int] | None = None

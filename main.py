@@ -41,12 +41,20 @@ def propose_retirement_route(propose_retirement_request: propose_retirement.Prop
     return propose_retirement.propose_retirement_route(propose_retirement_request= propose_retirement_request, current_user=current_user)
 
 @app.patch("/admin/zone")
-def update_zone(zone: zone.EditZone, current_user: access_control.User = Depends(access_control.get_current_user)):
+def update_zone_route(zone: zone.EditZone, current_user: access_control.User = Depends(access_control.get_current_user)):
     return edit_zone.edit_zone(zone, current_user)
 
+@app.patch("/admin/zone/bulk_edit")
+def update_zones_route(bulk_edit_zone_request: edit_zone.BulkEditZonesRequest, current_user: access_control.User = Depends(access_control.get_current_user)):
+    return edit_zone.edit_zones(bulk_edit_zone_request, current_user)
+
 @app.delete("/admin/zone/{geography_uuid}", status_code=204)
-def update_zone(geography_uuid: UUID, current_user: access_control.User = Depends(access_control.get_current_user)):
+def delete_zone_route(geography_uuid: UUID, current_user: access_control.User = Depends(access_control.get_current_user)):
     return delete_zone.delete_zone(geography_uuid=geography_uuid, user=current_user)
+
+@app.post("/admin/zones/bulk_delete", status_code=204)
+def delete_zones_route(delete_request: delete_zone.DeleteZonesRequest, current_user: access_control.User = Depends(access_control.get_current_user)):
+    return delete_zone.delete_zones(request=delete_request, user=current_user)
 
 @app.get("/admin/zones")
 def get_zones_private(
