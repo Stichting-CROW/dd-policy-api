@@ -11,25 +11,26 @@ class MDSGeographies(BaseModel):
     updated: int
     geographies: List[Geography]
 
-def get_geographies():
+def get_geographies(municipality: str):
     with db_helper.get_resource() as (cur, _):
         try:
-            result = query_geographies(cur)
+            result = query_geographies(cur, municipality)
             return generate_geographies_response(result=result)
         except Exception as e:
             print(e)
             raise HTTPException(status_code=500, detail="DB problem, check server log for details.")
 
-def query_geographies(cur):
+def query_geographies(cur, municipality: str):
     stmt = """
         SELECT geography_id, zone_id, geographies.name, description, 
         effective_date, published_date, retire_date, published_retire_date, ST_AsGeoJSON(area) as geojson
         FROM geographies
         JOIN zones
         USING(zone_id)
-        WHERE NOW() => published_date
+        WHERE NOW() >= published_date and (retire_date IS NULL or NOW() <= retire_date)
+        AND ((true = %s) or  municipality = %s)
     """
-    cur.execute(stmt)
+    cur.execute(stmt, (municipality == None, municipality))
     return cur.fetchall()
 
 def generate_geographies_response(result):

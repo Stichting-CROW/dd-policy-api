@@ -1,10 +1,11 @@
 
 from typing import List, Optional, Dict
-from pydantic import BaseModel, Field, parse_obj_as
+from pydantic import BaseModel, Field
 import datetime
 from uuid import UUID, uuid1
 import json
 from datetime import timezone, datetime
+import zones.zone as zone
 
 class Rule(BaseModel):
     name: str
@@ -13,7 +14,7 @@ class Rule(BaseModel):
     geographies: List[UUID]
     states: Dict[str, List[str]]
     rule_units: Optional[str]
-    minimum: Optional[int]
+    minimum: Optional[int] = None
     maximum: Optional[int]
 
 class Policy(BaseModel):
@@ -24,23 +25,27 @@ class Policy(BaseModel):
     name: str
     description: str
     rules: List[Rule]
-    municipality: str
     
     class Config:
         json_encoders = {
-            datetime: lambda v: v.replace(tzinfo=timezone.utc).timestamp() * 1000,
+            datetime: lambda v: int(v.replace(tzinfo=timezone.utc).timestamp() * 1000),
         }
 
-def convert_policy_row(row):
-    # rules_json = json.loads(row["rules"])
-    rules = parse_obj_as(List[Rule], row["rules"])
+def convert_policy_row(zone):
     return Policy(
-        policy_id=row["policy_id"],
-        start_date=row["start_date"],
-        end_date=row["end_date"],
-        published_date=row["published_date"],
-        rules=rules,
-        name=row["name"],
-        description=row["description"],
-        municipality=row["gm_code"]
+        policy_id=zone["geography_id"],
+        start_date=zone["effective_date"],
+        end_date=zone["retire_date"],
+        published_date=zone["published_date"],
+        rules=[Rule(
+            name = "Disallow parking",
+            description = "This rule forbids parking.",
+            rule_type = "count",
+            rule_units = "devices",
+            geographies = [zone["geography_id"]],
+            states = {"available": ["trip_end"]},
+            maximum = 0
+        )],
+        name="This policy disallow parking",
+        description="Parking is not allowed in this geography"
     )

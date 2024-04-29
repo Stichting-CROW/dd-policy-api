@@ -84,8 +84,8 @@ def get_zones_public(service_area_version_id: int):
 
 # MDS - endpoints.
 @app.get("/geographies", response_model=geographies.MDSGeographies)
-def get_geographies_route():
-    return geographies.get_geographies()
+def get_geographies_route(municipality: Union[str, None] = None):
+    return geographies.get_geographies(municipality)
 
 @app.get("/geographies/{geography_uuid}", response_model=geography.MDSGeography)
 def get_geographies_route(geography_uuid: UUID):
@@ -99,11 +99,11 @@ def get_stops_route(municipality: Union[str, None] = None):
 def get_stop_route(stop_uuid: UUID):
     return stop.get_stop(stop_uuid)
 
-@app.get("/policies", response_model=policies.MDSPolicies)
+@app.get("/policies", response_model=policies.MDSPolicies, response_model_exclude_none=True)
 def get_stops_route(municipality: Union[str, None] = None):
     return policies.get_policies(municipality)
 
-@app.get("/policies/{policy_uuid}", response_model=policies.MDSPolicies)
+@app.get("/policies/{policy_uuid}", response_model=policies.MDSPolicies, response_model_exclude_none=True)
 def get_stop_route(policy_uuid: UUID):
     return policies.get_policy(policy_uuid)
 
@@ -116,9 +116,9 @@ def get_kml_route(kml_export_request: kml_export.ExportKMLRequest):
             headers={'Content-Disposition': 'attachment; filename="{}"'.format("dashboarddeelmobiliteit_kml_export.zip")}
         )
 
-@app.post("/admin/kml/pre_import")
+@app.post("/admin/kml/import")
 def get_pre_import_kml(file: Annotated[bytes, File()], municipality: str, current_user: access_control.User = Depends(access_control.get_current_user)):
-    return kml_import.kml_import(file, municipality)
+    return kml_import.kml_import(file, municipality, current_user)
 
 @app.on_event("shutdown")
 def shutdown_event():

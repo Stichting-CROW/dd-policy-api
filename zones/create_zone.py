@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from zones.zone import Zone
 
 def create_single_zone(cur, zone: Zone, user):
-    check_if_user_has_access(zone, user.acl)
+    check_if_user_has_access(zone.municipality, user.acl)
     zone.zone_id = create_classic_zone(cur, zone)
     create_geography(cur, zone, user.email)
     create_stop(cur, zone)
@@ -104,12 +104,12 @@ def check_if_zone_is_valid(cur, geometry, municipality):
         return False
     return result["is_valid"]
 
-def check_if_user_has_access(zone, acl):
+def check_if_user_has_access(municipality, acl):
     if acl.is_admin:
         return True
     if not acl.is_allowed_to_edit:
-        raise HTTPException(status_code=403, detail="User is not allowed to create zone in this municipality, check ACL.")
-    if zone.municipality in acl.municipalities:
+        raise HTTPException(status_code=403, detail="User is not allowed to create or modify zones in this municipality, check ACL.")
+    if municipality in acl.municipalities:
         return True
-    raise HTTPException(status_code=403, detail="User is not allowed to create zone in this municipality, check ACL.")
+    raise HTTPException(status_code=403, detail="User is not allowed to create or modify zones in this municipality, check ACL.")
     

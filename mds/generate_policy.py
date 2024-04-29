@@ -1,9 +1,8 @@
 import zones.zone as zone
 import mds.policy
-import json
 from pydantic.json import pydantic_encoder
 
-def generate_policy(cur, data: zone.Zone):
+def generate_policy(data: zone.Zone):
     if data.geography_type != "no_parking":
       return
 
@@ -18,12 +17,13 @@ def generate_policy(cur, data: zone.Zone):
     )
     
     policy = mds.policy.Policy(
+        policy_id=data.geography_id,
         name = "No parking policy: " + data.name,
         description= "Disallow parking in geography with name: " + data.name,
-        start_date=data.no_parking.start_date,
-        end_date=data.no_parking.end_date,
-        rules = [rule],
-        municipality = data.municipality
+        start_date=data.effective_date,
+        end_date=data.retire_date,
+        published_date=data.published_date,
+        rules = [rule]
     )
     return policy
 

@@ -49,7 +49,6 @@ class Zone(BaseModel):
     phase: str | None = None
 
 class EditZone(BaseModel):
-    zone_id: int
     geography_id: UUID
     area: PolygonFeatureModel | None = None
     name: str | None = None

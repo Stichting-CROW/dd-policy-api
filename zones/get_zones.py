@@ -85,7 +85,7 @@ def query_zones(cur, municipality, geography_types, phases):
     cur.execute(stmt, (municipality == None, municipality, len(geography_types) == 0, geography_types, phases))
     return cur.fetchall()
 
-def get_zone_by_id(cur, geography_uuid: UUID):
+def get_zone_by_id(cur, geography_uuid: UUID) -> zone_mod.Zone:
     result = query_zone_by_id(cur, geography_uuid)
     if result == None:
         raise HTTPException(status_code=404, detail=f"Geography {geography_uuid} doesn't exist.")

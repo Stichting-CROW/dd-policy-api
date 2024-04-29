@@ -42,19 +42,22 @@ def get_policy(policy_uuid):
 
 def query_policies(cur, municipality):
     stmt = """
-        SELECT policy_id, start_date, end_date, published_date, rules,
-        gm_code, name, description
-        FROM policies
-        WHERE ((true = %s) or gm_code = %s)
-        AND (end_date is null or end_date > NOW())
-        ORDER BY start_date
+        SELECT geography_id, zone_id, geographies.name, description, 
+        effective_date, published_date, retire_date, published_retire_date, ST_AsGeoJSON(area) as geojson
+        FROM geographies
+        JOIN zones
+        USING(zone_id)
+        WHERE NOW() >= published_date and (retire_date IS NULL or NOW() <= retire_date)
+        AND ((true = %s) or  municipality = %s)
+        AND geography_type = 'no_parking'
+        ORDER BY effective_date
     """
     cur.execute(stmt, (municipality == None, municipality))
     return cur.fetchall()
 
 def query_policy(cur, policy_id):
     stmt = """
-        SELECT policy_id, start_date, end_date, published_date, rules,
+        SELECT geography_id, effective_date, retire_date, published_date, rules,
         gm_code, name, description
         FROM policies
         WHERE policy_id = %s

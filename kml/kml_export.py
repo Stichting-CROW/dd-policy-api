@@ -1,4 +1,3 @@
-from kml import db
 import simplekml
 import io
 import zipfile
@@ -15,12 +14,11 @@ def create_kml(zones: list[zone.Zone], background_color = "7F2471FA"):
     mds_base_url = "https://mds.dashboarddeelmobiliteit.nl"
     kml_file = simplekml.Kml()
     for zone in zones:
-        pol = kml_file.newpolygon(name=zone.name)
-        pol.outerboundaryis = zone.area.geometry.coordinates[0][0]
+        pol = kml_file.newpolygon(name=zone.name, description=zone.description)
+        pol.outerboundaryis = zone.area.geometry.coordinates[0]
         pol.extendeddata.newdata(name='_geography_id', value=zone.geography_id)
         pol.extendeddata.newdata(name='internal_id', value=zone.internal_id)
-        pol.extendeddata.newdata(name='geography_type', value=zone.geography_type)
-        pol.extendeddata.newdata(name='description', value=zone.description)
+        pol.extendeddata.newdata(name='geography_type', value=zone.geography_type.value)
         pol.extendeddata.newdata(name='_prev_geographies', value=json.dumps(zone.prev_geographies))
 
         if zone.phase != "concept":

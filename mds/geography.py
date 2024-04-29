@@ -15,7 +15,7 @@ class Geography(BaseModel):
     geography_json: FeatureCollection
     effective_date: Optional[int]
     published_date: int
-    retire_date: Optional[int]
+    retire_date: Optional[int] = None
 
 class MDSGeography(BaseModel):
     version: str = "1.2.0"
@@ -39,7 +39,7 @@ def query_geography(cur, geography_uuid):
         FROM geographies
         JOIN zones
         USING(zone_id)
-        WHERE NOW() => published_date AND geography_id = %s
+        WHERE NOW() >= published_date AND geography_id = %s
     """
     cur.execute(stmt, (str(geography_uuid),))
     return cur.fetchone()
@@ -53,6 +53,8 @@ def generate_geography_response(result):
     )
 
 def convert_geography_row(row):
+    print(row)
+    retire_date = row["retire_date"]
     published_retire_date = row["published_retire_date"]
     if published_retire_date and published_retire_date <= datetime.now():
         retire_date = None
@@ -73,6 +75,7 @@ def convert_datetime_to_millis(dt):
 
 def convert_record_to_feature_collection(geojson):
     geometry = geometries.parse_geometry_obj(json.loads(geojson))
-    feature = Feature(geometry=geometry)
-    return FeatureCollection(features=[feature])
+    print(geometry.type)
+    feature = Feature(type="Feature", geometry=geometry, properties={})
+    return FeatureCollection(type="FeatureCollection", features=[feature])
     
