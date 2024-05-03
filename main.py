@@ -66,8 +66,11 @@ def get_zones_private(
     return get_zones.get_private_zones(municipality=municipality, geography_types=geography_types, phases=phases)
 
 @app.get("/public/zones")
-def get_zones_public(municipality: Union[str, None] = None, geography_types: list[zone.GeographyType] = Query(default=[])):
-    return get_zones.get_public_zones(municipality=municipality, geography_types=geography_types)
+def get_zones_public(
+    municipality: Union[str, None] = None, 
+    geography_types: list[zone.GeographyType] = Query(default=[]),
+    phases: Annotated[list[zone.Phase], Query()] = []):
+    return get_zones.get_public_zones(municipality=municipality, geography_types=geography_types, phases=phases)
 
 @app.get("/public/service_area")
 def get_zones_public(municipalities: list[str] = Query(), operators: list[str] = Query()):

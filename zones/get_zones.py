@@ -13,7 +13,7 @@ def get_private_zones(municipality, geography_types, phases: list[zone_mod.Phase
     with db_helper.get_resource() as (cur, conn):
         try:
             zone_rows = query_zones(cur, municipality=municipality, geography_types=geography_types, phases=phases)
-            zones = zone_mod.convert_zones(zone_rows)
+            zones = zone_mod.convert_zones(zone_rows, include_private_data=True)
             zones_with_realtime_data = zone_mod.look_up_realtime_data(zones)
             return zones_with_realtime_data
         except HTTPException as e:
@@ -24,11 +24,11 @@ def get_private_zones(municipality, geography_types, phases: list[zone_mod.Phase
             print(e)
             raise HTTPException(status_code=500, detail="DB problem, check server log for details.")
 
-def get_public_zones(municipality, geography_types):
+def get_public_zones(municipality, geography_types, phases: list[zone_mod.Phase]):
     with db_helper.get_resource() as (cur, conn):
         try:
-            zone_rows = query_zones(cur, municipality=municipality, geography_types=geography_types)
-            zones = zone_mod.convert_zones(zone_rows)
+            zone_rows = query_zones(cur, municipality=municipality, geography_types=geography_types, phases=phases)
+            zones = zone_mod.convert_zones(zone_rows, include_private_data=False)
             zones_with_realtime_data = zone_mod.look_up_realtime_data(zones)
             return zones_with_realtime_data
         except HTTPException as e:

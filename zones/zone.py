@@ -76,13 +76,13 @@ def convert_to_edit_zone(bulk_edit_zone: BulkEditZone, geography_id: UUID):
         stop=stop,
     ) 
 
-def convert_zones(zone_rows):
+def convert_zones(zone_rows, include_private_data=False):
     results = []
     for zone_row in zone_rows: 
-        results.append(convert_zone(zone_row))
+        results.append(convert_zone(zone_row, include_private_data))
     return results
 
-def convert_zone(zone_row):
+def convert_zone(zone_row, include_private_data):
     result = Zone(
         zone_id=zone_row["zone_id"],
         internal_id=zone_row["internal_id"],
@@ -99,14 +99,15 @@ def convert_zone(zone_row):
         stop=None,
         created_at=zone_row["created_at"],
         modified_at=zone_row["modified_at"],
-        created_by=zone_row["created_by"],
-        last_modified_by=zone_row["last_modified_by"],
         phase=zone_row["phase"]
     )
     if zone_row["prev_geographies"]:
         result.prev_geographies = zone_row["prev_geographies"]
     if result.geography_type == "stop":
         result.stop = convert_stop(stop_row=zone_row)
+    if include_private_data:
+        result.created_by=zone_row["created_by"]
+        result.last_modified_by=zone_row["last_modified_by"]
     return result
 
 def convert_stop(stop_row):
