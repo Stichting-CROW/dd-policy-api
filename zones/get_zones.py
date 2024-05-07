@@ -89,7 +89,7 @@ def get_zone_by_id(cur, geography_uuid: UUID) -> zone_mod.Zone:
     result = query_zone_by_id(cur, geography_uuid)
     if result == None:
         raise HTTPException(status_code=404, detail=f"Geography {geography_uuid} doesn't exist.")
-    return zone_mod.convert_zone(result)
+    return zone_mod.convert_zone(result, include_private_data=True)
 
 def query_zone_by_id(cur, geography_uuid: UUID):
     stmt = """
@@ -136,11 +136,10 @@ def get_zones_by_ids(cur, geography_uuids: list[UUID]):
     result = query_zones_by_ids(cur, geography_uuids)
     zones = []
     for row in result:
-        zones.append(zone_mod.convert_zone(row))
+        zones.append(zone_mod.convert_zone(row, include_private_data=True))
     return zones
 
 def query_zones_by_ids(cur, geography_uuids: list[UUID]):
-    geography_uuids_str = list(map(lambda geograhy_uuid: str(geograhy_uuid), geography_uuids))
     stmt = """
         SELECT geographies.geography_id, internal_id, geographies.name, description, geography_type, 
         effective_date, published_date, propose_retirement, published_retire_date, retire_date, prev_geographies,

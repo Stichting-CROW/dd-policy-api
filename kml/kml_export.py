@@ -15,7 +15,8 @@ def create_kml(zones: list[zone.Zone], background_color = "7F2471FA"):
     kml_file = simplekml.Kml()
     for zone in zones:
         pol = kml_file.newpolygon(name=zone.name, description=zone.description)
-        pol.outerboundaryis = zone.area.geometry.coordinates[0]
+        
+        pol.outerboundaryis.coords = zone.area.geometry.coordinates[0]
         pol.extendeddata.newdata(name='_geography_id', value=zone.geography_id)
         pol.extendeddata.newdata(name='internal_id', value=zone.internal_id)
         pol.extendeddata.newdata(name='geography_type', value=zone.geography_type.value)
@@ -39,8 +40,6 @@ def create_kml(zones: list[zone.Zone], background_color = "7F2471FA"):
         
         pol.extendeddata.newdata(name='_created_at', value=zone.created_at)
         pol.extendeddata.newdata(name='_modified_at', value=zone.modified_at)
-        pol.extendeddata.newdata(name='_created_by', value=zone.created_by)
-        pol.extendeddata.newdata(name='_last_modified_by', value=zone.last_modified_by)
         pol.extendeddata.newdata(name='_phase', value=zone.phase)     
 
         pol.style.polystyle.color = background_color
@@ -54,6 +53,8 @@ class ExportKMLRequest(BaseModel):
 
 def export(export_kml_request: ExportKMLRequest):
     zones = []
+    if len(export_kml_request.geography_ids) < 1:
+        raise HTTPException(status_code=400, detail="You should specify at least one geography_uuid")
     with db_helper.get_resource() as (cur, conn): 
         zones = get_zones.get_zones_by_ids(cur, export_kml_request.geography_ids)
 

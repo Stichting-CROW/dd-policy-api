@@ -15,30 +15,32 @@ class PublishZoneRequest(BaseModel):
     effective_on: AwareDatetime
 
 
-def publish_zones_query(cur, publish_zones_request: PublishZoneRequest, geography_ids):
+def publish_zones_query(cur, publish_zones_request: PublishZoneRequest, geography_ids, email: str):
     if len(geography_ids) == 0:
         return
     stmt = """
         UPDATE geographies
         SET effective_date = %s,
         published_date = %s,
-        modified_at = NOW()
+        modified_at = NOW(),
+        last_modified_by = %s
         WHERE geography_id = ANY(%s)
     """
 
-    cur.execute(stmt, (publish_zones_request.effective_on, publish_zones_request.publish_on, geography_ids))
+    cur.execute(stmt, (publish_zones_request.effective_on, publish_zones_request.publish_on, email, geography_ids))
 
-def publish_retire_zones_query(cur, publish_zones_request: PublishZoneRequest, geography_ids):
+def publish_retire_zones_query(cur, publish_zones_request: PublishZoneRequest, geography_ids, email: str):
     if len(geography_ids) == 0:
         return
     stmt = """
         UPDATE geographies
         SET retire_date = %s,
         published_retire_date = %s,
-        modified_at = NOW()
+        modified_at = NOW(),
+        last_modified_by = %s
         WHERE geography_id = ANY(%s)
     """
-    cur.execute(stmt, (publish_zones_request.effective_on, publish_zones_request.publish_on, geography_ids))
+    cur.execute(stmt, (publish_zones_request.effective_on, publish_zones_request.publish_on, email, geography_ids))
 
 
 def publish_zones_route(publish_zone_request: PublishZoneRequest, current_user: access_control.User):
@@ -55,7 +57,7 @@ def publish_zones_route(publish_zone_request: PublishZoneRequest, current_user: 
             print(e)
             raise HTTPException(status_code=500, detail="DB problem, check server log for details.")
 
-def publish_zones(cur, publish_zones_request: PublishZoneRequest, user):
+def publish_zones(cur, publish_zones_request: PublishZoneRequest, user: access_control.User):
     if publish_zones_request.publish_on < datetime.now(timezone.utc):
         raise HTTPException(400, "publish_on should be in the future")
     if publish_zones_request.effective_on < datetime.now(timezone.utc):
@@ -80,5 +82,5 @@ def publish_zones(cur, publish_zones_request: PublishZoneRequest, user):
         else:
             to_publish.append(geography_id)
     
-    publish_zones_query(cur, publish_zones_request, to_publish)
-    publish_retire_zones_query(cur, publish_zones_request, to_retire)
+    publish_zones_query(cur, publish_zones_request, to_publish, user.email)
+    publish_retire_zones_query(cur, publish_zones_request, to_retire, user.email)

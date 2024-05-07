@@ -156,11 +156,6 @@ def get_all_polygons(element) -> list[kml.Placemark]:
 def kml_import(kml_file, municipality_code: str, current_user: access_control.User):
     check_if_user_has_access(municipality=municipality_code, acl=current_user.acl)
 
-    municipality_border = db.get_municipality_border(municipality_code)
-    if not municipality_border:
-        raise HTTPException(400, "municipality code is not known")
-    municipality_area = shapely.wkb.loads(municipality_border)
-
     k = kml.KML()
     k.from_string(kml_file.decode("utf-8"))
    

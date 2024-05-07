@@ -24,7 +24,7 @@ class Phase(str, Enum):
     active = "active"
     archived = "archived"
     
-PolygonFeatureModel = Feature[Union[MultiPolygon, Polygon], Dict]
+PolygonFeatureModel = Feature[Union[Polygon, MultiPolygon], Dict]
 class Zone(BaseModel):
     zone_id: int | None = None
     area: PolygonFeatureModel
@@ -82,7 +82,7 @@ def convert_zones(zone_rows, include_private_data=False):
         results.append(convert_zone(zone_row, include_private_data))
     return results
 
-def convert_zone(zone_row, include_private_data):
+def convert_zone(zone_row, include_private_data=False):
     result = Zone(
         zone_id=zone_row["zone_id"],
         internal_id=zone_row["internal_id"],

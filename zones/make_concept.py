@@ -30,30 +30,33 @@ def move_published_zone_back_to_concept(cur, old_zone: Zone, user: access_contro
     stmt = """
         UPDATE geographies
         SET propose_retirement = true,
-        last_modified
+        modified_at = NOW(),
+        last_modified_by = %s
         WHERE geography_id = %s
     """
-    cur.execute(stmt, (old_zone.geography_id,))
+    cur.execute(stmt, (user.email, old_zone.geography_id))
 
-def move_committed_concept_back_to_concept(cur, geography_id):
+def move_committed_concept_back_to_concept(cur, geography_id, user: access_control.User):
     stmt = """
         UPDATE geographies
         SET effective_date = null,
         published_date = null,
-        modified_at = NOW()
+        modified_at = NOW(),
+        last_modified_by = %s
         WHERE geography_id = %s
     """
-    cur.execute(stmt, (geography_id,))
+    cur.execute(stmt, (user.email, geography_id))
 
-def move_committed_concept_retirement_back_to_concept(cur, geography_id):
+def move_committed_concept_retirement_back_to_concept(cur, geography_id, user: access_control.User):
     stmt = """
         UPDATE geographies
         SET retire_date = null,
         published_retire_date = null,
-        modified_at = NOW()
+        modified_at = NOW(),
+        last_modified_by = %s
         WHERE geography_id = %s
     """
-    cur.execute(stmt, (geography_id,))
+    cur.execute(stmt, (user.email, geography_id))
 
 def make_concept(cur, geography_ids: list[UUID], user: access_control.User):
     for geography_id in geography_ids:
@@ -65,9 +68,9 @@ def make_concept(cur, geography_ids: list[UUID], user: access_control.User):
         if zone.phase not in ["committed_concept", "published", "active", "committed_retirement_concept"]:
             raise HTTPException(400, f"it's not possible to make a concept of this zone {geography_id} is not in a committed_concept, published or active phase.")
         if zone.phase == "committed_concept":
-            move_committed_concept_back_to_concept(cur, zone.geography_id)
+            move_committed_concept_back_to_concept(cur, zone.geography_id, user)
         elif zone.phase == "committed_retirement_concept":
-            move_committed_concept_retirement_back_to_concept(cur, zone.geography_id)
+            move_committed_concept_retirement_back_to_concept(cur, zone.geography_id, user)
         elif zone.phase in ["published", "active"]:
             move_published_zone_back_to_concept(cur, zone, user)
 
