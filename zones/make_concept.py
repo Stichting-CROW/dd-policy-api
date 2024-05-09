@@ -11,13 +11,14 @@ from zones.zone import check_if_user_has_access_to_zone_based_on_municipality, Z
 from zones.create_zone import create_single_zone
 from zones.get_zones import get_zone_by_id
 
-
 class MakeConceptRequest(BaseModel):
     geography_ids: list[UUID]
 
 def move_published_zone_back_to_concept(cur, old_zone: Zone, user: access_control.User):
 
     new_zone = old_zone.model_copy(deep=True)
+    if new_zone.stop:
+        new_zone.stop.stop_id = uuid1()
     new_zone.geography_id = uuid1()
     new_zone.prev_geographies = [old_zone.geography_id]
     new_zone.published_date = None
