@@ -60,7 +60,7 @@ def delete_zones_route(delete_request: delete_zone.DeleteZonesRequest, current_u
 def get_zones_private(
     municipality: Union[str, None] = None, 
     geography_types: list[zone.GeographyType] = Query(default=[]),
-    phases: Annotated[list[zone.Phase], Query()] = []):
+    phases: Annotated[list[zone.Phase], Query()] = [zone.Phase.active, zone.Phase.retirement_concept, zone.Phase.published_retirement, zone.Phase.committed_retire_concept]):
     if len(phases) == 0:
         raise HTTPException(status_code=400, detail="At least one phase in query parameter phases should be specified.")
     return get_zones.get_private_zones(municipality=municipality, geography_types=geography_types, phases=phases)
@@ -69,7 +69,7 @@ def get_zones_private(
 def get_zones_public(
     municipality: Union[str, None] = None, 
     geography_types: list[zone.GeographyType] = Query(default=[]),
-    phases: Annotated[list[zone.Phase], Query()] = []):
+    phases: Annotated[list[zone.Phase], Query()] = [zone.Phase.active, zone.Phase.retirement_concept, zone.Phase.published_retirement, zone.Phase.committed_retire_concept]):
     return get_zones.get_public_zones(municipality=municipality, geography_types=geography_types, phases=phases)
 
 @app.get("/public/service_area")
