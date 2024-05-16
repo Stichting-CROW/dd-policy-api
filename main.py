@@ -77,11 +77,11 @@ def get_zones_public(municipalities: list[str] = Query(), operators: list[str] =
     return get_service_areas.get_service_areas(municipalities=municipalities, operators=operators)
 
 @app.get("/public/service_area/available_operators")
-def get_operators_with_service_area(municipalities: list[str] = Query()):
+def get_operators_with_service_area_route(municipalities: list[str] = Query()):
     return get_available_operators.get_available_operators(municipalities=municipalities)
 
 @app.get("/public/service_area/history")
-def get_service_area_history(
+def get_service_area_history_route(
     start_date: Annotated[date, Query()],
     end_date: Annotated[date, Query()],
     municipalities: list[str] = Query(), 
@@ -90,7 +90,7 @@ def get_service_area_history(
     return get_service_area_history.get_service_area_history(municipalities, operators, start_date, end_date)
 
 @app.get("/public/service_area/delta/{service_area_version_id}")
-def get_zones_public(service_area_version_id: int):
+def get_zones_public_route(service_area_version_id: int):
     return get_service_area_delta.get_service_area_delta(service_area_version_id)
 
 # MDS - endpoints.
