@@ -45,9 +45,12 @@ def generate_default_stop(point):
     )
 
 def parse_data_for_create(kml_feature, municipality_code):
-    internal_id = next((data_element.value for data_element in kml_feature.extended_data.elements if hasattr(data_element, "name") and data_element.name == "internal_id"), None)
-    geography_type = next((data_element.value for data_element in kml_feature.extended_data.elements if hasattr(data_element, "name") and data_element.name == "geography_type"), "stop")
-    
+    internal_id = None
+    geography_type = "stop"
+    if kml_feature.extended_data:
+        internal_id = next((data_element.value for data_element in kml_feature.extended_data.elements if hasattr(data_element, "name") and data_element.name == "internal_id"), None)
+        geography_type = next((data_element.value for data_element in kml_feature.extended_data.elements if hasattr(data_element, "name") and data_element.name == "geography_type"), "stop")
+        
     try:
         geography_type = GeographyType(geography_type)
     except:
@@ -73,14 +76,18 @@ def parse_data_for_create(kml_feature, municipality_code):
             internal_id=internal_id,
             name=kml_feature.name,
             municipality=municipality_code,
-            description=kml_feature.description or kml_feature.name,
+            description=kml_feature.name,
             geography_type=geography_type,
             stop=stop
     ), None
 
 def parse_data_for_update(geography_id: UUID, kml_feature: kml.Placemark):
-    internal_id = next((data_element.value for data_element in kml_feature.extended_data.elements if data_element.name == "internal_id"), None)
-    geography_type = next((data_element.value for data_element in kml_feature.extended_data.elements if data_element.name == "geography_type"), None)
+    internal_id = None
+    geography_type = None
+    if kml_feature.extended_data:
+        internal_id = next((data_element.value for data_element in kml_feature.extended_data.elements if data_element.name == "internal_id"), None)
+        geography_type = next((data_element.value for data_element in kml_feature.extended_data.elements if data_element.name == "geography_type"), None)
+      
     if geography_type:
         try:
             geography_type = GeographyType(geography_type)
@@ -103,7 +110,7 @@ def parse_data_for_update(geography_id: UUID, kml_feature: kml.Placemark):
         area=area,
         name=kml_feature.name,
         internal_id=internal_id,
-        description=kml_feature.description,
+        description=kml_feature.name,
         geography_type=geography_type
     ), None
 
@@ -170,7 +177,9 @@ def kml_import(kml_file, municipality_code: str, current_user: access_control.Us
     }
     with db_helper.get_resource() as (cur, conn):  
         for feature in polygons:
-            geography_id = next((data_element.value for data_element in feature.extended_data.elements if hasattr(data_element, "name") and data_element.name == "_geography_id"), None)
+            geography_id = None
+            if feature and feature.extended_data and feature.extended_date.elements:
+                geography_id = next((data_element.value for data_element in feature.extended_data.elements if hasattr(data_element, "name") and data_element.name == "_geography_id"), None)
             if geography_id:
                 updated_zone, err = update_zone(cur, geography_id, feature, current_user.email)
                 if updated_zone:

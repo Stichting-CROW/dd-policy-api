@@ -20,7 +20,7 @@ def create_kml(zones: list[zone.Zone], background_color = "7F2471FA"):
         pol.extendeddata.newdata(name='_geography_id', value=zone.geography_id)
         pol.extendeddata.newdata(name='internal_id', value=zone.internal_id)
         pol.extendeddata.newdata(name='geography_type', value=zone.geography_type.value)
-        pol.extendeddata.newdata(name='_prev_geographies', value=json.dumps(zone.prev_geographies))
+        pol.extendeddata.newdata(name='_prev_geographies', value=json.dumps([str(prev_geography_id) for prev_geography_id in zone.prev_geographies]))
 
         if zone.phase != "concept":
             pol.extendeddata.newdata(name='_effective_date', value=zone.effective_date)
