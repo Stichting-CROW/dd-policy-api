@@ -8,6 +8,7 @@ from typing import Optional, List
 from geojson_pydantic import FeatureCollection, Feature, geometries
 from uuid import UUID
 
+
 class Geography(BaseModel):
     name: str
     description: str
@@ -56,7 +57,7 @@ def convert_geography_row(row):
     print(row)
     retire_date = row["retire_date"]
     published_retire_date = row["published_retire_date"]
-    if published_retire_date and published_retire_date <= datetime.now():
+    if published_retire_date and published_retire_date <= datetime.now(timezone.utc):
         retire_date = None
     return Geography(
         name=row["name"],
@@ -71,7 +72,7 @@ def convert_geography_row(row):
 def convert_datetime_to_millis(dt):
     if dt == None:
         return None
-    return dt.replace(tzinfo=timezone.utc).timestamp() * 1000
+    return int(dt.replace(tzinfo=timezone.utc).timestamp() * 1000)
 
 def convert_record_to_feature_collection(geojson):
     geometry = geometries.parse_geometry_obj(json.loads(geojson))
