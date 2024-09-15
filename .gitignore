@@ -162,5 +162,7 @@ cython_debug/
 backup/
 
 .env-prod
-.connect_db_dev.sh
-.connect_db_prod.sh
+connect_db_dev.sh
+connect_db_prod.sh
+kubernetes-deployment.yaml
+kubernetes-service.yaml
