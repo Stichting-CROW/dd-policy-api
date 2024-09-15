@@ -160,3 +160,7 @@ cython_debug/
 #.idea/
 
 backup/
+
+.env-prod
+.connect_db_dev.sh
+.connect_db_prod.sh
