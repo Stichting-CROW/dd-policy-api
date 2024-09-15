@@ -9,4 +9,5 @@ shapely==2.0.4
 python-multipart==0.0.9
 fastkml==0.12
 setuptools==70.0.0 
-pytz==2024.1 
+pytz==2024.1
+fudgeo==0.8.0
