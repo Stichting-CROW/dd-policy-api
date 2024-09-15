@@ -4,10 +4,10 @@ import zipfile
 import shapely.wkt
 from shapely.geometry import mapping
 from fastapi import HTTPException
-from uuid import UUID
 from db_helper import db_helper
 from pydantic import BaseModel
 from zones import get_zones, zone
+from exporters.export_request import ExportRequest
 import json
 
 def create_kml(zones: list[zone.Zone], background_color = "7F2471FA"):
@@ -48,10 +48,9 @@ def create_kml(zones: list[zone.Zone], background_color = "7F2471FA"):
         pol.linestyle.width = 1
     return kml_file.kml()
 
-class ExportKMLRequest(BaseModel):
-    geography_ids: list[UUID]
 
-def export(export_kml_request: ExportKMLRequest):
+
+def export(export_kml_request: ExportRequest):
     zones = []
     if len(export_kml_request.geography_ids) < 1:
         raise HTTPException(status_code=400, detail="You should specify at least one geography_uuid")

@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 from zones import create_zone, zone, get_zones, delete_zone, edit_zone, publish_zones, make_concept, propose_retirement
 from db_helper import db_helper
 from mds import geographies, geography, stops, stop, policies, policy
-from kml import kml_export, kml_import
+from exporters import kml_export, kml_import, geopackage_export, export_request
 from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel
 from authorization import access_control
@@ -119,8 +119,8 @@ def get_stop_route(policy_uuid: UUID):
     return policies.get_policy(policy_uuid)
 
 @app.post("/kml/export")
-def get_kml_route(kml_export_request: kml_export.ExportKMLRequest):
-    result = kml_export.export(kml_export_request)
+def get_kml_route(export_request: export_request.ExportRequest):
+    result = kml_export.export(export_request)
     return StreamingResponse(
             iter([result.getvalue()]), 
             media_type="application/x-zip-compressed",
@@ -130,6 +130,15 @@ def get_kml_route(kml_export_request: kml_export.ExportKMLRequest):
 @app.post("/admin/kml/import")
 def get_pre_import_kml(file: Annotated[bytes, File()], municipality: str, current_user: access_control.User = Depends(access_control.get_current_user)):
     return kml_import.kml_import(file, municipality, current_user)
+
+@app.post("/gpkg/export")
+def export_gkpg_route(export_request: export_request.ExportRequest):
+    result = geopackage_export.export(export_request)
+    return StreamingResponse(
+            iter([result.getvalue()]), 
+            media_type="application/x-zip-compressed",
+            headers={'Content-Disposition': 'attachment; filename="{}"'.format("dashboarddeelmobiliteit_gpkg_export.zip")}
+        )
 
 @app.on_event("shutdown")
 def shutdown_event():
