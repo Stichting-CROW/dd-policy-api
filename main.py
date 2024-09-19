@@ -133,11 +133,11 @@ def get_pre_import_kml(file: Annotated[bytes, File()], municipality: str, curren
 
 @app.post("/gpkg/export")
 def export_gkpg_route(export_request: export_request.ExportRequest):
-    result = geopackage_export.export(export_request)
+    result, zip_file_name = geopackage_export.export(export_request)
     return StreamingResponse(
             iter([result.getvalue()]), 
             media_type="application/x-zip-compressed",
-            headers={'Content-Disposition': 'attachment; filename="{}"'.format("dashboarddeelmobiliteit_gpkg_export.zip")}
+            headers={'Content-Disposition': 'attachment; filename="{}"'.format(zip_file_name)}
         )
 
 @app.on_event("shutdown")
