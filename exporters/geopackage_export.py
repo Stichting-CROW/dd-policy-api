@@ -37,7 +37,7 @@ def add_data_to_monitoring(gpkg: GeoPackage, zones: Iterator[Zone]):
     rows = []
     for zone in zones:
         rows.append((MultiPolygon([zone.area.geometry.coordinates], srs_id=4326), zone.name, zone.internal_id, 
-                    zone.description, zone.municipality, str(zone.geography_id), ",".join(zone.prev_geographies), zone.effective_date,
+                    zone.description, zone.municipality, str(zone.geography_id), ",".join(str(geography_id) for geography_id in zone.prev_geographies), zone.effective_date,
                     zone.propose_retirement, zone.published_date, zone.published_retire_date, zone.created_at, zone.modified_at,
                     zone.created_by, zone.last_modified_by, zone.phase))
 
@@ -53,7 +53,7 @@ def add_data_to_no_parking(gpkg: GeoPackage, zones: Iterator[Zone]):
     rows = []
     for zone in zones:
         rows.append((MultiPolygon([zone.area.geometry.coordinates], srs_id=4326), zone.name, zone.internal_id, 
-                    zone.description, zone.municipality, str(zone.geography_id), ",".join(zone.prev_geographies), zone.effective_date,
+                    zone.description, zone.municipality, str(zone.geography_id), ",".join(str(geography_id) for geography_id in zone.prev_geographies), zone.effective_date,
                     zone.propose_retirement, zone.published_date, zone.published_retire_date, zone.created_at, zone.modified_at,
                     zone.created_by, zone.last_modified_by, zone.phase))
 
@@ -77,7 +77,7 @@ def add_data_to_microhub(gpkg: GeoPackage, zones: Iterator[Zone]):
     for zone in zones:
         capacity = zone.stop.capacity
         rows.append((MultiPolygon([zone.area.geometry.coordinates], srs_id=4326), zone.name, zone.internal_id, 
-                    zone.description, zone.municipality, str(zone.geography_id), ",".join(zone.prev_geographies), zone.effective_date,
+                    zone.description, zone.municipality, str(zone.geography_id), ",".join(str(geography_id) for geography_id in zone.prev_geographies), zone.effective_date,
                     zone.propose_retirement, zone.published_date, zone.published_retire_date, zone.created_at, zone.modified_at,
                     zone.created_by, zone.last_modified_by, zone.phase,
                     capacity.get("combined"), capacity.get("bicycle"), capacity.get("moped"), capacity.get("cargo_bicycle"), capacity.get("car"),
@@ -100,7 +100,7 @@ def export(export_request: ExportRequest):
     with db_helper.get_resource() as (cur, conn): 
         zones = get_zones.get_zones_by_ids(cur, export_request.geography_ids)
 
-    file_name = f"/tmp/dashboarddeelmobiliteit_gpkg_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.gpkg"
+    file_name = f"/tmp/dashboarddeelmobiliteit_gpkg_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.gpkg"
     gpkg: GeoPackage = GeoPackage.create(file_name)
 
     fields: tuple[Field, ...] = (
