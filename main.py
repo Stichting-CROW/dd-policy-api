@@ -1,3 +1,4 @@
+from tempfile import NamedTemporaryFile
 from typing import List, Union
 from uuid import UUID
 from typing import Annotated
@@ -7,7 +8,7 @@ from fastapi.responses import StreamingResponse
 from zones import create_zone, zone, get_zones, delete_zone, edit_zone, publish_zones, make_concept, propose_retirement
 from db_helper import db_helper
 from mds import geographies, geography, stops, stop, policies, policy
-from exporters import kml_export, kml_import, geopackage_export, export_request
+from exporters import kml_export, kml_import, geopackage_export, geopackage_import, export_request
 from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel
 from authorization import access_control
@@ -25,7 +26,7 @@ def create_zone_route(zone: zone.Zone, current_user: access_control.User = Depen
 # /admin endpoints
 @app.post("/admin/bulk_insert_zones", status_code=201)
 def create_bulk_zone_route(zones: list[zone.Zone], current_user: access_control.User = Depends(access_control.get_current_user)):
-    return create_zone.create_zones(zones, current_user)
+    return create_zone.create_zones(zones, current_user)[0]
 
 # /admin endpoints
 @app.post("/admin/zones/publish", status_code=204)
@@ -140,6 +141,26 @@ def export_gkpg_route(export_request: export_request.ExportRequest):
             headers={'Content-Disposition': 'attachment; filename="{}"'.format(zip_file_name)}
         )
 
+@app.post("/admin/gpkg/import")
+async def export_gkpg_route(file: UploadFile, municipality: str, current_user: access_control.User = Depends(access_control.get_current_user)):
+    temp = NamedTemporaryFile(delete=False)
+    try:
+        try:
+            contents = file.file.read()
+            with temp as f:
+                f.write(contents);
+        except Exception:
+            raise HTTPException(status_code=500, detail='Error on geopackage')
+        finally:
+            file.file.close()
+        return geopackage_import.gpkg_import(temp.name, municipality, current_user)
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail='Something went wrong')
+
+    
+
+ 
 @app.on_event("shutdown")
 def shutdown_event():
     db_helper.shutdown_connection_pool()

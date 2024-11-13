@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from zones.zone import Zone
 
 def create_single_zone(cur, zone: Zone, user):
+    print(zone)
     check_if_user_has_access(zone.municipality, user.acl)
     zone.zone_id = create_classic_zone(cur, zone)
     create_geography(cur, zone, user.email)
@@ -13,19 +14,29 @@ def create_single_zone(cur, zone: Zone, user):
     
 def create_zones(zones, user):
     result = []
+    errors = []
     with db_helper.get_resource() as (cur, conn):
+        for zone in zones:
+            try:
+                result.append(create_single_zone(cur, zone, user))    
+            except HTTPException as e:
+                errors.append({
+                    "geography_id": zone.geography_id,
+                    "error": "geography_id_create_error",
+                    "detail": str(e)
+                })
+            except Exception as e:
+                conn.rollback()
+                print(e)
+                raise HTTPException(status_code=500, detail="DB problem, check server log for details.")
         try:
-            for zone in zones:
-                result.append(create_single_zone(cur, zone, user))
             conn.commit()
-            return result
-        except HTTPException as e:
-            conn.rollback()
-            raise e
         except Exception as e:
-            conn.rollback()
             print(e)
+            conn.rollback()
             raise HTTPException(status_code=500, detail="DB problem, check server log for details.")
+
+    return result, errors
 
 def create_zone(zone, user):
     with db_helper.get_resource() as (cur, conn):

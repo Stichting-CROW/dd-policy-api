@@ -40,7 +40,6 @@ def edit_zones(edit_zone_request: BulkEditZonesRequest,  user: access_control.Us
             print(e)
             raise HTTPException(status_code=500, detail="DB problem, check server log for details. \n\n" + str(e))
 
-
 def edit_zone(new_zone: EditZone, user: access_control.User):
     with db_helper.get_resource() as (cur, conn):
         try:
@@ -58,6 +57,9 @@ def edit_zone(new_zone: EditZone, user: access_control.User):
 
 def edit_single_zone(cur, new_zone: EditZone, user: access_control.User):
     old_zone = get_zone_by_id(cur, new_zone.geography_id)
+    edit_old_zone(cur, old_zone, new_zone, user)
+
+def edit_old_zone(cur, old_zone, new_zone: EditZone, user: access_control.User):
     check_if_edit_is_allowed(old_zone=old_zone, new_zone=new_zone)
     check_if_user_has_access(old_zone.municipality, user.acl)
     
