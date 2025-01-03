@@ -28,6 +28,7 @@ def is_valid_uuid(uuid_string):
         return str(uuid_obj) == uuid_string.lower()
     except ValueError:
         # If ValueError is raised, it’s not a valid UUID
+        print("INCORRECT")
         return False
 
 
@@ -37,10 +38,10 @@ def convert_capacity(record):
             "combined": record[5]
         }
     return {
-        "bicycle": record[6],
-        "moped": record[7],
-        "cargo_bicycle": record[8],
-        "car": record[9]
+        "bicycle": record[6] if record[6] else 0,
+        "moped": record[7] if record[7] else 0,
+        "cargo_bicycle": record[8] if record[8] else 0,
+        "car": record[9] if record[9] else 0
     }
 
 def convert_microhub_control_status(status: str) -> Dict[str, bool]:
@@ -119,6 +120,7 @@ def get_no_parking(gpkg: GeoPackage, municipality_code: str):
         coords_list = [Position2D(float(coord[0]), float(coord[1])) for coord in feature[0].polygons[0].rings[0].coordinates]
         area = Polygon(type='Polygon', coordinates=[coords_list])
         area_feature = Feature[Union[Polygon, MultiPolygonPydantic], Dict](type='Feature', properties={}, geometry=area)
+
 
         new_zone = Zone(
             area=area_feature,

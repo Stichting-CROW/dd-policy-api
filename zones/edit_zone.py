@@ -90,6 +90,7 @@ def update_zone(cur, old_zone: Zone, new_zone: EditZone, email: str):
           new_zone.stop.status == None or new_zone.stop.capacity == None)):
         raise HTTPException(status_code=400, detail="stop object with is_virtual, status and capacity should be provided")
     
+    
     if new_zone.area:
         old_zone.area = new_zone.area
     if new_zone.name:
@@ -100,7 +101,6 @@ def update_zone(cur, old_zone: Zone, new_zone: EditZone, email: str):
         old_zone.internal_id = new_zone.internal_id
     if new_zone.geography_type:
         old_zone.geography_type = new_zone.geography_type
-    
     
 
     # check stop fields.
