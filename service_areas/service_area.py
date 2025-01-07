@@ -10,7 +10,7 @@ class ServiceArea(BaseModel):
     municipality: str
     operator: str
     valid_from: datetime
-    valid_until: Optional[datetime]
+    valid_until: datetime | None = None
     geometries: FeatureCollection
 
 class ServiceAreaVersion(BaseModel):
@@ -18,4 +18,4 @@ class ServiceAreaVersion(BaseModel):
     municipality: str
     operator: str
     valid_from: datetime
-    valid_until: Optional[datetime]
+    valid_until: datetime | None = None

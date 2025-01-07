@@ -33,7 +33,6 @@ def get_stops(municipality):
         last_updated = r.get("stops_last_updated")
         result = get_stops(keys=[key])
         for stop in result:
-            print(stop)
             stop_dict = json.loads(stop)
             results.append(MDSStop(**stop_dict))
 

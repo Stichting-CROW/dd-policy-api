@@ -47,7 +47,6 @@ def add_data_to_monitoring(gpkg: GeoPackage, zones: Iterator[Zone]):
                          _prev_geographies, _effective_date, _propose_retirement, _published_date, _published_retire_date, _created_at,
                          _modified_at, _created_by, _last_modified_by, _phase) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", rows)
-        print(rows)
 
 def add_data_to_no_parking(gpkg: GeoPackage, zones: Iterator[Zone]):
     rows = []
@@ -63,7 +62,6 @@ def add_data_to_no_parking(gpkg: GeoPackage, zones: Iterator[Zone]):
                          _prev_geographies, _effective_date, _propose_retirement, _published_date, _published_retire_date, _created_at,
                          _modified_at, _created_by, _last_modified_by, _phase) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", rows)
-        print(rows)
 
 def get_microhub_control_status(status: dict):
     if status.get("control_automatic") == True:
@@ -91,7 +89,6 @@ def add_data_to_microhub(gpkg: GeoPackage, zones: Iterator[Zone]):
                         capacity_combined, capacity_bicycle, capacity_moped, capacity_cargo_bicycle, capacity_car,
                         microhub_control_status, is_virtual) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", rows)
-        print(rows)
 
 def export(export_request: ExportRequest):
     zones = []

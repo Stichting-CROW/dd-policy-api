@@ -5,7 +5,6 @@ from fastapi import HTTPException
 from zones.zone import Zone
 
 def create_single_zone(cur, zone: Zone, user):
-    print(zone)
     check_if_user_has_access(zone.municipality, user.acl)
     zone.zone_id = create_classic_zone(cur, zone)
     create_geography(cur, zone, user.email)

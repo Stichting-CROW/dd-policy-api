@@ -54,7 +54,6 @@ def generate_geography_response(result):
     )
 
 def convert_geography_row(row):
-    print(row)
     retire_date = row["retire_date"]
     published_retire_date = row["published_retire_date"]
     if published_retire_date and published_retire_date <= datetime.now(timezone.utc):
