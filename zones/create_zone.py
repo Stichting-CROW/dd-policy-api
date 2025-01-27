@@ -58,7 +58,7 @@ def create_classic_zone(cur, data):
         INSERT INTO zones
         (area, name, municipality, zone_type)
         VALUES
-        (ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326), %s, %s, 'custom')
+        (ST_SetSRID(ST_GeomFromGeoJSON(ST_MakeValid(%s)), 4326), %s, %s, 'custom')
         RETURNING zone_id
     """
     cur.execute(stmt, (data.area.geometry.json(), data.name, data.municipality))
