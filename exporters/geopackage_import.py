@@ -1,7 +1,6 @@
 
 from typing import Dict, Union
 from geojson_pydantic import Feature, Point, Polygon, MultiPolygon as MultiPolygonPydantic
-from mds import stop
 from zones import edit_zone, get_zones
 from zones import create_zone
 from zones import zone
@@ -18,7 +17,7 @@ from datetime import datetime
 
 import uuid
 
-from zones.stop import Stop
+from zones.stop import Stop, EditStop
 from zones.zone import Zone
 
 def is_valid_uuid(uuid_string):
@@ -187,9 +186,15 @@ def gpkg_import(gpkg_file_name: str, municipality_code: str, current_user: acces
     check_if_user_has_access(municipality=municipality_code, acl=current_user.acl)
     gpkg = GeoPackage(gpkg_file_name)
     
+    print("Opened gpkg succsfully")
     uploaded_zones = get_microhubs(gpkg, municipality_code)
+    print(f"Uploaded zones ", len(uploaded_zones))
     uploaded_zones.extend(get_no_parking(gpkg, municipality_code))
+    print(f"Uploaded zones ", len(uploaded_zones))
+
     uploaded_zones.extend(get_monitoring(gpkg, municipality_code))
+    print(f"Uploaded zones ", len(uploaded_zones))
+
 
     geography_ids = [data.geography_id for data in uploaded_zones]
 
@@ -238,7 +243,7 @@ def process_uploaded_zones(z: list[zone.Zone], zone_dict, current_user: access_c
             # update
             edit_stop = None
             if new_zone.geography_type == "microhub":
-                edit_stop = stop.EditStop(
+                edit_stop = EditStop(
                     location = new_zone.stop.location,
                     is_virtual = new_zone.stop.is_virtual,
                     status = new_zone.stop.status,
@@ -258,6 +263,7 @@ def process_uploaded_zones(z: list[zone.Zone], zone_dict, current_user: access_c
         else:
             to_create_zones.append(new_zone)
 
+    print(f"To create zones: {len(to_create_zones)}")
     res["created"], errors = create_zone.create_zones(to_create_zones, current_user)
     res["error"].extend(errors)
     

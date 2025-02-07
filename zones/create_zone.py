@@ -25,6 +25,7 @@ def create_zones(zones, user):
                     "detail": str(e)
                 })
             except Exception as e:
+                print("It's going wrong here")
                 conn.rollback()
                 print(e)
                 raise HTTPException(status_code=500, detail="DB problem, check server log for details.")
@@ -58,7 +59,7 @@ def create_classic_zone(cur, data):
         INSERT INTO zones
         (area, name, municipality, zone_type)
         VALUES
-        (ST_SetSRID(ST_GeomFromGeoJSON(ST_MakeValid(%s)), 4326), %s, %s, 'custom')
+        (ST_SetSRID(ST_MakeValid(ST_GeomFromGeoJSON(%s)), 4326), %s, %s, 'custom')
         RETURNING zone_id
     """
     cur.execute(stmt, (data.area.geometry.json(), data.name, data.municipality))
@@ -97,9 +98,10 @@ def create_stop(cur, data):
         json.dumps(stop.status), json.dumps(stop.capacity), str(data.geography_id), stop.is_virtual))
 
 def check_if_zone_is_valid(cur, geometry, municipality):
+    print(geometry)
     stmt = """  
     SELECT ST_WITHIN(
-        ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326), 
+        ST_SetSRID(ST_MakeValid(ST_GeomFromGeoJSON(%s)), 4326), 
         -- Add some buffer to allow drawing a little bit out of the municipality border
         (SELECT st_buffer(area, 0.02) 
         FROM zones
@@ -110,6 +112,7 @@ def check_if_zone_is_valid(cur, geometry, municipality):
     """
     cur.execute(stmt, (geometry, municipality))
     result = cur.fetchone()
+    print("succesvol")
     if result == None:
         return False
     return result["is_valid"]
