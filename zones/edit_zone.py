@@ -78,8 +78,6 @@ def check_if_edit_is_allowed(old_zone: Zone, new_zone: EditZone):
     if new_zone.geography_type:
         raise HTTPException(status_code=400, detail=f"It's not possible to edit geography_type when zone is in {old_zone.phase}")
     
-    if new_zone.stop and new_zone.stop.is_virtual:
-        raise HTTPException(status_code=400, detail=f"It's not possible to edit stop.is_virtual when zone is in {old_zone.phase}")
     if new_zone.stop and new_zone.stop.location:
         raise HTTPException(status_code=400, detail=f"It's not possible to edit stop.location when zone is in {old_zone.phase}")
     return
