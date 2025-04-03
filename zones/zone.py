@@ -79,6 +79,7 @@ def convert_to_edit_zone(bulk_edit_zone: BulkEditZone, geography_id: UUID):
 def convert_zones(zone_rows, include_private_data=False):
     results = []
     for zone_row in zone_rows: 
+        print(zone_row)
         results.append(convert_zone(zone_row, include_private_data))
     return results
 

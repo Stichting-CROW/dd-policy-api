@@ -9,10 +9,10 @@ from geojson_pydantic import Feature, Polygon
 from uuid import UUID
 
 
-def get_private_zones(municipality, geography_types, phases: list[zone_mod.Phase]):
+def get_private_zones(municipality, geography_types, phases: list[zone_mod.Phase], affected_modalities: list):
     with db_helper.get_resource() as (cur, conn):
         try:
-            zone_rows = query_zones(cur, municipality=municipality, geography_types=geography_types, phases=phases)
+            zone_rows = query_zones(cur, municipality=municipality, geography_types=geography_types, phases=phases, affected_modalities=affected_modalities)
             zones = zone_mod.convert_zones(zone_rows, include_private_data=True)
             zones_with_realtime_data = zone_mod.look_up_realtime_data(zones)
             return zones_with_realtime_data
@@ -24,10 +24,10 @@ def get_private_zones(municipality, geography_types, phases: list[zone_mod.Phase
             print(e)
             raise HTTPException(status_code=500, detail="DB problem, check server log for details.")
 
-def get_public_zones(municipality, geography_types, phases: list[zone_mod.Phase]):
+def get_public_zones(municipality, geography_types, phases: list[zone_mod.Phase], affected_modalities: list):
     with db_helper.get_resource() as (cur, conn):
         try:
-            zone_rows = query_zones(cur, municipality=municipality, geography_types=geography_types, phases=phases)
+            zone_rows = query_zones(cur, municipality=municipality, geography_types=geography_types, phases=phases, affected_modalities=affected_modalities)
             zones = zone_mod.convert_zones(zone_rows, include_private_data=False)
             zones_with_realtime_data = zone_mod.look_up_realtime_data(zones)
             return zones_with_realtime_data
@@ -39,7 +39,7 @@ def get_public_zones(municipality, geography_types, phases: list[zone_mod.Phase]
             print(e)
             raise HTTPException(status_code=500, detail="DB problem, check server log for details.")
 
-def query_zones(cur, municipality, geography_types, phases):
+def query_zones(cur, municipality, geography_types, phases, affected_modalities: list):
     stmt = """
         SELECT *
         FROM (
@@ -79,10 +79,14 @@ def query_zones(cur, municipality, geography_types, phases):
             ((true = %s) or (zones.municipality = %s))
             AND
             ((true = %s) or (geography_type = ANY(%s)))
+            AND
+            (geographies.affected_modalities && %s)
         ) as all_zones
         WHERE phase = ANY(%s);
     """
-    cur.execute(stmt, (municipality == None, municipality, len(geography_types) == 0, geography_types, phases))
+    print(phases)
+    print(affected_modalities)
+    cur.execute(stmt, (municipality == None, municipality, len(geography_types) == 0, geography_types, affected_modalities, phases))
     return cur.fetchall()
 
 def get_zone_by_id(cur, geography_uuid: UUID) -> zone_mod.Zone:

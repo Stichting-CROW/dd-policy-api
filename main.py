@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from authorization import access_control
 from service_areas import get_available_operators, get_service_areas, get_service_area_history, get_service_area_delta
 from datetime import date
+from modalities import Modality
 
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -61,17 +62,20 @@ def delete_zones_route(delete_request: delete_zone.DeleteZonesRequest, current_u
 def get_zones_private(
     municipality: Union[str, None] = None, 
     geography_types: list[zone.GeographyType] = Query(default=[]),
-    phases: Annotated[list[zone.Phase], Query()] = [zone.Phase.active, zone.Phase.retirement_concept, zone.Phase.published_retirement, zone.Phase.committed_retire_concept]):
+    phases: Annotated[list[zone.Phase], Query()] = [zone.Phase.active, zone.Phase.retirement_concept, zone.Phase.published_retirement, zone.Phase.committed_retire_concept],
+    affected_modalities: Annotated[list[Modality], Query()] = [Modality.bicycle, Modality.car, Modality.moped, Modality.cargo_bicycle]
+):
     if len(phases) == 0:
         raise HTTPException(status_code=400, detail="At least one phase in query parameter phases should be specified.")
-    return get_zones.get_private_zones(municipality=municipality, geography_types=geography_types, phases=phases)
+    return get_zones.get_private_zones(municipality=municipality, geography_types=geography_types, phases=phases, affected_modalities=affected_modalities)
 
 @app.get("/public/zones")
 def get_zones_public(
     municipality: Union[str, None] = None, 
     geography_types: list[zone.GeographyType] = Query(default=[]),
-    phases: Annotated[list[zone.Phase], Query()] = [zone.Phase.active, zone.Phase.retirement_concept, zone.Phase.published_retirement, zone.Phase.committed_retire_concept]):
-    return get_zones.get_public_zones(municipality=municipality, geography_types=geography_types, phases=phases)
+    phases: Annotated[list[zone.Phase], Query()] = [zone.Phase.active, zone.Phase.retirement_concept, zone.Phase.published_retirement, zone.Phase.committed_retire_concept],
+    affected_modalities: Annotated[list[Modality], Query()] = [Modality.bicycle, Modality.car, Modality.moped, Modality.cargo_bicycle]):
+    return get_zones.get_public_zones(municipality=municipality, geography_types=geography_types, phases=phases, affected_modalities=affected_modalities)
 
 @app.get("/public/service_area")
 def get_zones_public(municipalities: list[str] = Query(), operators: list[str] = Query()):
