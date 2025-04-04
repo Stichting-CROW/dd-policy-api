@@ -5,7 +5,7 @@ from zones.create_zone import check_if_zone_is_valid, create_stop
 from zones.delete_zone import delete_stops
 from zones.get_zones import get_zone_by_id
 from mds.generate_policy import generate_policy
-from zones.zone import Zone, EditZone, BulkEditZone, convert_to_edit_zone
+from zones.zone import Zone, EditZone, BulkEditZone, convert_to_edit_zone, GeographyType
 from zones.stop import Stop, PointFeatureModel
 from authorization import access_control
 from uuid import uuid1
@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from fastapi import HTTPException
 from uuid import UUID
 import shapely
+from modalities import Modality
 
 class BulkEditZonesRequest(BaseModel):
     geography_ids: list[UUID]
@@ -57,7 +58,7 @@ def edit_zone(new_zone: EditZone, user: access_control.User):
 
 def edit_single_zone(cur, new_zone: EditZone, user: access_control.User):
     old_zone = get_zone_by_id(cur, new_zone.geography_id)
-    edit_old_zone(cur, old_zone, new_zone, user)
+    return edit_old_zone(cur, old_zone, new_zone, user)
 
 def edit_old_zone(cur, old_zone, new_zone: EditZone, user: access_control.User):
     check_if_edit_is_allowed(old_zone=old_zone, new_zone=new_zone)
@@ -82,6 +83,27 @@ def check_if_edit_is_allowed(old_zone: Zone, new_zone: EditZone):
         raise HTTPException(status_code=400, detail=f"It's not possible to edit stop.location when zone is in {old_zone.phase}")
     return
 
+def derive_affected_modalities_edit(old_zone: Zone, new_zone: EditZone):
+    if not new_zone.affected_modalities and new_zone.geography_type != GeographyType.stop:
+        return old_zone.affected_modalities
+
+    if new_zone.geography_type != GeographyType.stop:
+        return new_zone.affected_modalities
+    
+
+    if "combined" in new_zone.stop.capacity:
+        return [Modality.bicycle, Modality.moped, Modality.cargo_bicycle]
+    affected_modalities: list[Modality] = []
+    if "moped" in new_zone.stop.capacity:
+        affected_modalities.append(Modality.moped)
+    if "bicycle" in new_zone.stop.capacity:
+        affected_modalities.append(Modality.bicycle)
+    if "cargo_bicycle" in new_zone.stop.capacity:
+        affected_modalities.append(Modality.cargo_bicycle)
+    if "car" in new_zone.stop.capacity:
+        affected_modalities.append(Modality.car)
+    return affected_modalities
+
 def update_zone(cur, old_zone: Zone, new_zone: EditZone, email: str):
     is_new_geography_type = new_zone.geography_type and new_zone.geography_type == "stop" and old_zone.geography_type != "stop"
     if (is_new_geography_type and (new_zone.stop == None or new_zone.stop.is_virtual == None or
@@ -100,6 +122,7 @@ def update_zone(cur, old_zone: Zone, new_zone: EditZone, email: str):
     if new_zone.geography_type:
         old_zone.geography_type = new_zone.geography_type
     
+    old_zone.affected_modalities = derive_affected_modalities_edit(old_zone=old_zone, new_zone=new_zone)
 
     # check stop fields.
     if new_zone.stop and not old_zone.stop:
@@ -130,6 +153,7 @@ def update_zone(cur, old_zone: Zone, new_zone: EditZone, email: str):
             old_zone.stop.status = new_zone.stop.status
         if new_zone.stop.capacity:
             old_zone.stop.capacity = new_zone.stop.capacity
+
     merged_zone = old_zone
     merged_zone.last_modified_by = email
 
@@ -198,11 +222,12 @@ def update_geography_record(cur, zone: Zone):
         geography_type = %s,
         internal_id = %s,
         modified_at = NOW(),
-        last_modified_by = %s
+        last_modified_by = %s,
+        affected_modalities = %s
         WHERE geography_id = %s
         RETURNING modified_at
     """
-    cur.execute(stmt, (zone.name, zone.description, zone.geography_type, zone.internal_id, zone.last_modified_by, str(zone.geography_id)))
+    cur.execute(stmt, (zone.name, zone.description, zone.geography_type, zone.internal_id, zone.last_modified_by, zone.affected_modalities, str(zone.geography_id)))
     if cur.rowcount == 0:
         raise HTTPException(status_code=404, detail="No zone for this geography_id.")
     return cur.fetchone()["modified_at"]

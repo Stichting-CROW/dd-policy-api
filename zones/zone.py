@@ -8,6 +8,8 @@ from datetime import datetime
 from redis_helper import redis_helper
 import json
 from mds.stop import MDSStop
+from modalities import Modality, DefaultModes
+
 
 class GeographyType(str, Enum):
     monitoring = "monitoring"
@@ -47,6 +49,7 @@ class Zone(BaseModel):
     created_by: str | None = None
     last_modified_by: str | None = None
     phase: str | None = None
+    affected_modalities: list[Modality] | None = DefaultModes
 
 class EditZone(BaseModel):
     geography_id: UUID
@@ -57,10 +60,12 @@ class EditZone(BaseModel):
     description: str | None = None
     geography_type: GeographyType | None = None
     stop: stop_mod.EditStop | None = None
+    affected_modalities: list[Modality] | None = None
 
 class BulkEditZone(BaseModel):
     geography_type: GeographyType | None = None
     stop: stop_mod.EditStop | None = None
+    affected_modalities: list[Modality] | None = None
 
 def convert_to_edit_zone(bulk_edit_zone: BulkEditZone, geography_id: UUID):
     stop = None
@@ -74,6 +79,7 @@ def convert_to_edit_zone(bulk_edit_zone: BulkEditZone, geography_id: UUID):
         geography_id=geography_id,
         geography_type=bulk_edit_zone.geography_type,
         stop=stop,
+        affected_modalities=bulk_edit_zone.affected_modalities
     ) 
 
 def convert_zones(zone_rows, include_private_data=False):
@@ -100,7 +106,8 @@ def convert_zone(zone_row, include_private_data=False):
         stop=None,
         created_at=zone_row["created_at"],
         modified_at=zone_row["modified_at"],
-        phase=zone_row["phase"]
+        phase=zone_row["phase"],
+        affected_modalities=zone_row["affected_modalities"]
     )
     if zone_row["prev_geographies"]:
         result.prev_geographies = zone_row["prev_geographies"]

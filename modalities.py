@@ -5,3 +5,5 @@ class Modality(str, Enum):
     cargo_bicycle = "cargo_bicycle"
     bicycle = "bicycle"
     moped = "moped"
+
+DefaultModes = [Modality.bicycle, Modality.moped, Modality.cargo_bicycle]

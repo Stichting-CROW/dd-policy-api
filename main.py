@@ -74,11 +74,12 @@ def get_zones_public(
     municipality: Union[str, None] = None, 
     geography_types: list[zone.GeographyType] = Query(default=[]),
     phases: Annotated[list[zone.Phase], Query()] = [zone.Phase.active, zone.Phase.retirement_concept, zone.Phase.published_retirement, zone.Phase.committed_retire_concept],
-    affected_modalities: Annotated[list[Modality], Query()] = [Modality.bicycle, Modality.car, Modality.moped, Modality.cargo_bicycle]):
+    affected_modalities: Annotated[list[Modality], Query()] = [Modality.bicycle, Modality.car, Modality.moped, Modality.cargo_bicycle]
+):
     return get_zones.get_public_zones(municipality=municipality, geography_types=geography_types, phases=phases, affected_modalities=affected_modalities)
 
 @app.get("/public/service_area")
-def get_zones_public(municipalities: list[str] = Query(), operators: list[str] = Query()):
+def get_service_area(municipalities: list[str] = Query(), operators: list[str] = Query()):
     return get_service_areas.get_service_areas(municipalities=municipalities, operators=operators)
 
 @app.get("/public/service_area/available_operators")

@@ -2,14 +2,39 @@
 from db_helper import db_helper
 import json
 from fastapi import HTTPException
-from zones.zone import Zone
+from zones.zone import Zone, GeographyType
+from modalities import Modality
 
 def create_single_zone(cur, zone: Zone, user):
     check_if_user_has_access(zone.municipality, user.acl)
     zone.zone_id = create_classic_zone(cur, zone)
+    zone.affected_modalities = derive_affected_modalities(zone)
+    print(zone.affected_modalities)
+
     create_geography(cur, zone, user.email)
     create_stop(cur, zone)
+
+
     return zone
+
+# Derive affected_modalities for backward compitable behaviour.
+def derive_affected_modalities(zone: Zone):
+    if zone.geography_type != GeographyType.stop:
+        return zone.affected_modalities
+    # if "combined" the default modes are affected
+    print(zone.stop.capacity)
+    if "combined" in zone.stop.capacity:
+        return [Modality.bicycle, Modality.moped, Modality.cargo_bicycle]
+    affected_modalities: list[Modality] = []
+    if "moped" in zone.stop.capacity:
+        affected_modalities.append(Modality.moped)
+    if "bicycle" in zone.stop.capacity:
+        affected_modalities.append(Modality.bicycle)
+    if "cargo_bicycle" in zone.stop.capacity:
+        affected_modalities.append(Modality.cargo_bicycle)
+    if "car" in zone.stop.capacity:
+        affected_modalities.append(Modality.car)
+    return affected_modalities
     
 def create_zones(zones, user):
     result = []
@@ -68,13 +93,14 @@ def create_classic_zone(cur, data):
 def create_geography(cur, data, email):
     stmt = """
         INSERT INTO geographies
-        (geography_id, internal_id, zone_id, name, description, geography_type, effective_date, published_date, prev_geographies, created_at, modified_at, created_by, last_modified_by)
+        (geography_id, internal_id, zone_id, name, description, geography_type, effective_date, published_date, prev_geographies, created_at, modified_at, created_by, last_modified_by, affected_modalities)
         VALUES
-        (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(), %s, %s)
+        (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(), %s, %s, %s)
         RETURNING created_at, modified_at
     """
+    print(data)
     cur.execute(stmt, (str(data.geography_id), data.internal_id, data.zone_id, data.name, data.description, data.geography_type, 
-        data.effective_date, data.published_date, data.prev_geographies, email, email))
+        data.effective_date, data.published_date, data.prev_geographies, email, email, data.affected_modalities))
     res = cur.fetchone()
     data.created_at = res["created_at"]
     data.modified_at = res["modified_at"]

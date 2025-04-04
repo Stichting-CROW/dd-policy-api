@@ -45,7 +45,7 @@ def query_zones(cur, municipality, geography_types, phases, affected_modalities:
         FROM (
             SELECT geographies.geography_id, internal_id, geographies.name, description, geography_type, 
             effective_date, published_date, propose_retirement, published_retire_date, retire_date, prev_geographies,
-            zones.zone_id, zones.municipality, 
+            zones.zone_id, zones.municipality, geographies.affected_modalities,
             json_build_object(
                 'type',       'Feature',
                 'geometry',   ST_AsGeoJSON(zones.area)::json,
@@ -99,7 +99,7 @@ def query_zone_by_id(cur, geography_uuid: UUID):
     stmt = """
         SELECT geographies.geography_id, internal_id, geographies.name, description, geography_type, 
         effective_date, published_date, propose_retirement, published_retire_date, retire_date, prev_geographies,
-        zones.zone_id, zones.municipality, 
+        zones.zone_id, zones.municipality, geographies.affected_modalities,
         json_build_object(
             'type',       'Feature',
             'geometry',   ST_AsGeoJSON(zones.area)::json,
@@ -122,7 +122,7 @@ def query_zone_by_id(cur, geography_uuid: UUID):
             'type',       'Feature',
             'geometry',   ST_AsGeoJSON( stops.location)::json,
             'properties',  json_build_object()
-        ) as location,
+        ) as location, 
         stops.status, stops.capacity, stops.is_virtual
         FROM geographies
         JOIN zones
