@@ -12,8 +12,9 @@ def generate_policy(data: zone.Zone):
         rule_type = "count",
         rule_units = "devices",
         geographies = [data.geography_id],
-        states = {"available": ["trip_end"]},
-        maximum = 0
+        states = {"available": None, "reserved": None, "non_operational": None},
+        maximum = 0,
+        vehicle_types=data.affected_modalities
     )
     
     policy = mds.policy.Policy(

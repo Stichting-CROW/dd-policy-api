@@ -6,6 +6,7 @@ from uuid import UUID, uuid1
 import json
 from datetime import timezone, datetime
 import zones.zone as zone
+from modalities import Modality
 
 class Rule(BaseModel):
     name: str
@@ -16,6 +17,7 @@ class Rule(BaseModel):
     rule_units: Optional[str]
     minimum: Optional[int] = None
     maximum: Optional[int]
+    vehicle_types: list[Modality] = None
 
 class Policy(BaseModel):
     policy_id: UUID = Field(default_factory=uuid1)
