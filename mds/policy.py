@@ -33,7 +33,7 @@ class Policy(BaseModel):
             datetime: lambda v: int(v.replace(tzinfo=timezone.utc).timestamp() * 1000),
         }
 
-def convert_policy_row(zone):
+def convert_policy_row(zone: zone.Zone):
     return Policy(
         policy_id=zone["geography_id"],
         start_date=zone["effective_date"],
@@ -45,8 +45,9 @@ def convert_policy_row(zone):
             rule_type = "count",
             rule_units = "devices",
             geographies = [zone["geography_id"]],
-            states = {"available": ["trip_end"]},
-            maximum = 0
+            states = {"available": None, "reserved": None, "non_operational": None},
+            maximum = 0,
+            vehicle_types=zone.affected_modalities
         )],
         name="This policy disallow parking",
         description="Parking is not allowed in this geography"

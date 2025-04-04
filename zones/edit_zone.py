@@ -4,7 +4,6 @@ from mds import geography
 from zones.create_zone import check_if_zone_is_valid, create_stop
 from zones.delete_zone import delete_stops
 from zones.get_zones import get_zone_by_id
-from mds.generate_policy import generate_policy
 from zones.zone import Zone, EditZone, BulkEditZone, convert_to_edit_zone, GeographyType
 from zones.stop import Stop, PointFeatureModel
 from authorization import access_control
