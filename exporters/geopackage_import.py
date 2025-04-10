@@ -108,7 +108,6 @@ def get_microhubs(gpkg: GeoPackage, municipality_code: str):
             capacity=convert_capacity(feature),
             is_virtual=feature[11]
         )
-     
 
         new_zone = Zone(
             area=area_feature,
@@ -117,8 +116,11 @@ def get_microhubs(gpkg: GeoPackage, municipality_code: str):
             internal_id=feature[3],
             description=feature[4] or f"microhub {i} {now:%Y-%m-%d %H:%M:%S}",
             geography_type="stop",
-            stop=stop
+            stop=stop,
+            affected_modalities=["moped", "bicycle", "cargo_bicycle"],
         )
+
+        new_zone = create_zone.derive_affected_modalities(new_zone)
 
         if feature[1] and is_valid_uuid(feature[1]):
             new_zone.geography_id = uuid.UUID(feature[1])
@@ -146,7 +148,8 @@ def get_no_parking(gpkg: GeoPackage, municipality_code: str):
             municipality=municipality_code,
             internal_id=feature[3],
             description=feature[4] or f"no_parking zone {i} {now:%Y-%m-%d %H:%M:%S}",
-            geography_type="no_parking"
+            geography_type="no_parking",
+            affected_modalities=["moped", "bicycle", "cargo_bicycle"],
         )
 
         if feature[1] and is_valid_uuid(feature[1]):
@@ -173,7 +176,8 @@ def get_monitoring(gpkg: GeoPackage, municipality_code: str):
             municipality=municipality_code,
             internal_id=feature[3],
             description=feature[4] or f"monitoring zone {i} {now:%Y-%m-%d %H:%M:%S}",
-            geography_type="monitoring"
+            geography_type="monitoring",
+            affected_modalities=["moped", "bicycle", "cargo_bicycle"],
         )
 
         if feature[1] and is_valid_uuid(feature[1]):

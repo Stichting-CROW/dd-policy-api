@@ -43,7 +43,7 @@ def get_policy(policy_uuid):
 def query_policies(cur, municipality):
     stmt = """
         SELECT geography_id, zone_id, geographies.name, description, 
-        effective_date, published_date, retire_date, published_retire_date, ST_AsGeoJSON(area) as geojson
+        effective_date, published_date, retire_date, published_retire_date, ST_AsGeoJSON(area) as geojson, affected_modalities
         FROM geographies
         JOIN zones
         USING(zone_id)
@@ -58,7 +58,7 @@ def query_policies(cur, municipality):
 def query_policy(cur, policy_id):
     stmt = """
         SELECT geography_id, effective_date, retire_date, published_date, rules,
-        gm_code, name, description
+        gm_code, name, description, affected_modalities
         FROM policies
         WHERE policy_id = %s
     """

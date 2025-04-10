@@ -13,7 +13,7 @@ class Rule(BaseModel):
     rule_id: UUID = Field(default_factory=uuid1)
     rule_type: str
     geographies: List[UUID]
-    states: Dict[str, List[str]]
+    states: Dict[str, Optional[List[str]]]
     rule_units: Optional[str]
     minimum: Optional[int] = None
     maximum: Optional[int]
@@ -33,7 +33,7 @@ class Policy(BaseModel):
             datetime: lambda v: int(v.replace(tzinfo=timezone.utc).timestamp() * 1000),
         }
 
-def convert_policy_row(zone: zone.Zone):
+def convert_policy_row(zone):
     return Policy(
         policy_id=zone["geography_id"],
         start_date=zone["effective_date"],
@@ -47,7 +47,7 @@ def convert_policy_row(zone: zone.Zone):
             geographies = [zone["geography_id"]],
             states = {"available": None, "reserved": None, "non_operational": None},
             maximum = 0,
-            vehicle_types=zone.affected_modalities
+            vehicle_types=zone["affected_modalities"]
         )],
         name="This policy disallow parking",
         description="Parking is not allowed in this geography"

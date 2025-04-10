@@ -147,7 +147,7 @@ def query_zones_by_ids(cur, geography_uuids: list[UUID]):
     stmt = """
         SELECT geographies.geography_id, internal_id, geographies.name, description, geography_type, 
         effective_date, published_date, propose_retirement, published_retire_date, retire_date, prev_geographies,
-        zones.zone_id, zones.municipality, 
+        zones.zone_id, zones.municipality,  geographies.affected_modalities,
         json_build_object(
             'type',       'Feature',
             'geometry',   ST_AsGeoJSON(zones.area)::json,

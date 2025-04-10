@@ -105,7 +105,7 @@ def get_geographies_route(municipality: Union[str, None] = None):
     return geographies.get_geographies(municipality)
 
 @app.get("/geographies/{geography_uuid}", response_model=geography.MDSGeography)
-def get_geographies_route(geography_uuid: UUID):
+def get_geography_route(geography_uuid: UUID):
     return geography.get_geography(geography_uuid)
 
 @app.get("/stops", response_model=stop.MDSStops)
@@ -117,11 +117,11 @@ def get_stop_route(stop_uuid: UUID):
     return stop.get_stop(stop_uuid)
 
 @app.get("/policies", response_model=policies.MDSPolicies, response_model_exclude_none=True)
-def get_stops_route(municipality: Union[str, None] = None):
+def get_policies_route(municipality: Union[str, None] = None):
     return policies.get_policies(municipality)
 
 @app.get("/policies/{policy_uuid}", response_model=policies.MDSPolicies, response_model_exclude_none=True)
-def get_stop_route(policy_uuid: UUID):
+def get_policy_route(policy_uuid: UUID):
     return policies.get_policy(policy_uuid)
 
 @app.post("/kml/export")
@@ -133,10 +133,6 @@ def get_kml_route(export_request: export_request.ExportRequest):
             headers={'Content-Disposition': 'attachment; filename="{}"'.format("dashboarddeelmobiliteit_kml_export.zip")}
         )
 
-@app.post("/admin/kml/import")
-def get_pre_import_kml(file: Annotated[bytes, File()], municipality: str, current_user: access_control.User = Depends(access_control.get_current_user)):
-    return kml_import.kml_import(file, municipality, current_user)
-
 @app.post("/gpkg/export")
 def export_gkpg_route(export_request: export_request.ExportRequest):
     result, zip_file_name = geopackage_export.export(export_request)
@@ -147,7 +143,7 @@ def export_gkpg_route(export_request: export_request.ExportRequest):
         )
 
 @app.post("/admin/gpkg/import")
-async def export_gkpg_route(file: UploadFile, municipality: str, current_user: access_control.User = Depends(access_control.get_current_user)):
+async def export_gpkg_route(file: UploadFile, municipality: str, current_user: access_control.User = Depends(access_control.get_current_user)):
     temp = NamedTemporaryFile(delete=False)
     try:
         try:
