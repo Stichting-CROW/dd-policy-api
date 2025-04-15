@@ -9,43 +9,91 @@ from pydantic import BaseModel
 from zones import get_zones, zone
 from exporters.export_request import ExportRequest
 import json
+from datetime import datetime
+
+def add_polygon(kml_file, zone, mds_base_url: str, background_color: str):
+    pol = kml_file.newpolygon(name=zone.name, description=zone.description)
+        
+    pol.outerboundaryis.coords = zone.area.geometry.coordinates[0]
+    pol.extendeddata.newdata(name='_geography_id', value=zone.geography_id)
+    pol.extendeddata.newdata(name='internal_id', value=zone.internal_id)
+    pol.extendeddata.newdata(name='geography_type', value=zone.geography_type.value)
+    pol.extendeddata.newdata(name='_prev_geographies', value=json.dumps([str(prev_geography_id) for prev_geography_id in zone.prev_geographies]))
+
+    if zone.phase != "concept":
+        pol.extendeddata.newdata(name='_effective_date', value=zone.effective_date)
+        pol.extendeddata.newdata(name='_published_date', value=zone.published_date)
+    
+    if zone.phase not in ["concept", "commited_concept"]:
+        pol.extendeddata.newdata(name='_mds_geography_url', value=mds_base_url + "/geographies/" + str(zone.geography_id))
+    
+
+    if zone.phase in ["", "", ""]:
+        pol.extendeddata.newdata(name='_published_retire_date', value=zone.published_retire_date)
+        pol.extendeddata.newdata(name='_retire_date', value=zone.retire_date)
+    if zone.stop:
+        pol.extendeddata.newdata(name='_stop_id', value=str(zone.stop.stop_id))
+        pol.extendeddata.newdata(name='_mds_stop_url', value=mds_base_url + "/stops/" + str(zone.stop.stop_id))
+    
+    
+    pol.extendeddata.newdata(name='_created_at', value=zone.created_at)
+    pol.extendeddata.newdata(name='_modified_at', value=zone.modified_at)
+    pol.extendeddata.newdata(name='_phase', value=zone.phase)     
+
+    pol.style.polystyle.color = background_color
+    pol.style.polystyle.fill = 1
+    pol.style.linestyle.color = 'FF000000'
+    pol.linestyle.width = 1
+    return kml_file
+
+def add_multi_polygon(kml_file: simplekml.Kml, zone: zone.Zone, mds_base_url: str, background_color: str):
+    multi_polygon = kml_file.newmultigeometry(name=zone.name, description=zone.description)
+
+    for polygon in zone.area.geometry.coordinates:
+        pol = multi_polygon.newpolygon()
+        print(polygon)
+        pol.outerboundaryis.coords = polygon[0]
+    multi_polygon.extendeddata.newdata(name='_geography_id', value=zone.geography_id)
+    multi_polygon.extendeddata.newdata(name='internal_id', value=zone.internal_id)
+    multi_polygon.extendeddata.newdata(name='geography_type', value=zone.geography_type.value)
+    multi_polygon.extendeddata.newdata(name='_prev_geographies', value=json.dumps([str(prev_geography_id) for prev_geography_id in zone.prev_geographies]))
+
+    if zone.phase != "concept":
+        multi_polygon.extendeddata.newdata(name='_effective_date', value=zone.effective_date)
+        multi_polygon.extendeddata.newdata(name='_published_date', value=zone.published_date)
+    
+    if zone.phase not in ["concept", "commited_concept"]:
+        multi_polygon.extendeddata.newdata(name='_mds_geography_url', value=mds_base_url + "/geographies/" + str(zone.geography_id))
+    
+
+    if zone.phase in ["", "", ""]:
+        multi_polygon.extendeddata.newdata(name='_published_retire_date', value=zone.published_retire_date)
+        multi_polygon.extendeddata.newdata(name='_retire_date', value=zone.retire_date)
+    if zone.stop:
+        multi_polygon.extendeddata.newdata(name='_stop_id', value=str(zone.stop.stop_id))
+        multi_polygon.extendeddata.newdata(name='_mds_stop_url', value=mds_base_url + "/stops/" + str(zone.stop.stop_id))
+    
+    
+    multi_polygon.extendeddata.newdata(name='_created_at', value=zone.created_at)
+    multi_polygon.extendeddata.newdata(name='_modified_at', value=zone.modified_at)
+    multi_polygon.extendeddata.newdata(name='_phase', value=zone.phase)     
+
+    multi_polygon.style.polystyle.color = background_color
+    multi_polygon.style.polystyle.fill = 1
+    multi_polygon.style.linestyle.color = 'FF000000'
+    multi_polygon.linestyle.width = 1
+    return kml_file
+
 
 def create_kml(zones: list[zone.Zone], background_color = "7F2471FA"):
     mds_base_url = "https://mds.dashboarddeelmobiliteit.nl"
     kml_file = simplekml.Kml()
     for zone in zones:
-        pol = kml_file.newpolygon(name=zone.name, description=zone.description)
-        
-        pol.outerboundaryis.coords = zone.area.geometry.coordinates[0]
-        pol.extendeddata.newdata(name='_geography_id', value=zone.geography_id)
-        pol.extendeddata.newdata(name='internal_id', value=zone.internal_id)
-        pol.extendeddata.newdata(name='geography_type', value=zone.geography_type.value)
-        pol.extendeddata.newdata(name='_prev_geographies', value=json.dumps([str(prev_geography_id) for prev_geography_id in zone.prev_geographies]))
+        if zone.area.geometry.type == "MultiPolygon":
+            kml_file = add_multi_polygon(kml_file=kml_file, zone=zone, mds_base_url=mds_base_url, background_color=background_color)
+        else:
+            kml_file = add_polygon(kml_file=kml_file, zone=zone, mds_base_url=mds_base_url, background_color=background_color)
 
-        if zone.phase != "concept":
-            pol.extendeddata.newdata(name='_effective_date', value=zone.effective_date)
-            pol.extendeddata.newdata(name='_published_date', value=zone.published_date)
-        
-        if zone.phase not in ["concept", "commited_concept"]:
-            pol.extendeddata.newdata(name='_mds_geography_url', value=mds_base_url + "/geographies/" + str(zone.geography_id))
-        
-
-        if zone.phase in ["", "", ""]:
-            pol.extendeddata.newdata(name='_published_retire_date', value=zone.published_retire_date)
-            pol.extendeddata.newdata(name='_retire_date', value=zone.retire_date)
-        if zone.stop:
-            pol.extendeddata.newdata(name='_stop_id', value=str(zone.stop.stop_id))
-            pol.extendeddata.newdata(name='_mds_stop_url', value=mds_base_url + "/stops/" + str(zone.stop.stop_id))
-        
-        
-        pol.extendeddata.newdata(name='_created_at', value=zone.created_at)
-        pol.extendeddata.newdata(name='_modified_at', value=zone.modified_at)
-        pol.extendeddata.newdata(name='_phase', value=zone.phase)     
-
-        pol.style.polystyle.color = background_color
-        pol.style.polystyle.fill = 1
-        pol.style.linestyle.color = 'FF000000'
-        pol.linestyle.width = 1
     return kml_file.kml()
 
 
@@ -64,12 +112,13 @@ def export(export_kml_request: ExportRequest):
     monitoring = filter(lambda zone: zone.geography_type == "monitoring", zones)
     exported_monitoring = create_kml(monitoring, "7FEB9D1A")
     
+    file_name = f"dashboarddeelmobiliteit_kml_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
     return create_zip([
         ("microhubs.kml", exported_microhubs),
         ("no_parking.kml", exported_no_parking),
         ("monitoring.kml", exported_monitoring),
         ("README.md", get_readme())
-    ])
+    ]), file_name
     
 
 def create_zip(files: list[tuple]):

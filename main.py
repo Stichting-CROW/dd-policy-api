@@ -126,11 +126,11 @@ def get_policy_route(policy_uuid: UUID):
 
 @app.post("/kml/export")
 def get_kml_route(export_request: export_request.ExportRequest):
-    result = kml_export.export(export_request)
+    result, zip_file_name = kml_export.export(export_request)
     return StreamingResponse(
             iter([result.getvalue()]), 
             media_type="application/x-zip-compressed",
-            headers={'Content-Disposition': 'attachment; filename="{}"'.format("dashboarddeelmobiliteit_kml_export.zip")}
+            headers={'Content-Disposition': 'attachment; filename="{}"'.format(zip_file_name)}
         )
 
 @app.post("/gpkg/export")

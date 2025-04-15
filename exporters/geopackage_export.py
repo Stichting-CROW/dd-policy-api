@@ -36,7 +36,8 @@ def create_layer(name: str, gpkg: GeoPackage, fields: tuple[Field, ...],):
 def add_data_to_monitoring(gpkg: GeoPackage, zones: Iterator[Zone]):
     rows = []
     for zone in zones:
-        rows.append((MultiPolygon([zone.area.geometry.coordinates], srs_id=4326), zone.name, zone.internal_id, 
+        coordinates = geometry_to_coordinates(zone.area.geometry)
+        rows.append((MultiPolygon(coordinates, srs_id=4326), zone.name, zone.internal_id, 
                     zone.description, zone.municipality, str(zone.geography_id), ",".join(str(geography_id) for geography_id in zone.prev_geographies), zone.effective_date,
                     zone.propose_retirement, zone.published_date, zone.published_retire_date, zone.created_at, zone.modified_at,
                     zone.created_by, zone.last_modified_by, zone.phase))
@@ -51,7 +52,8 @@ def add_data_to_monitoring(gpkg: GeoPackage, zones: Iterator[Zone]):
 def add_data_to_no_parking(gpkg: GeoPackage, zones: Iterator[Zone]):
     rows = []
     for zone in zones:
-        rows.append((MultiPolygon([zone.area.geometry.coordinates], srs_id=4326), zone.name, zone.internal_id, 
+        coordinates = geometry_to_coordinates(zone.area.geometry)
+        rows.append((MultiPolygon(coordinates, srs_id=4326), zone.name, zone.internal_id, 
                     zone.description, zone.municipality, str(zone.geography_id), ",".join(str(geography_id) for geography_id in zone.prev_geographies), zone.effective_date,
                     zone.propose_retirement, zone.published_date, zone.published_retire_date, zone.created_at, zone.modified_at,
                     zone.created_by, zone.last_modified_by, zone.phase))
@@ -70,11 +72,18 @@ def get_microhub_control_status(status: dict):
         return "manually_open"
     return "manually_closed"
 
+def geometry_to_coordinates(geometry):
+    if geometry.type == "MultiPolygon":
+        return geometry.coordinates
+
+    return [geometry.coordinates]
+
 def add_data_to_microhub(gpkg: GeoPackage, zones: Iterator[Zone]):
     rows = []
     for zone in zones:
         capacity = zone.stop.capacity
-        rows.append((MultiPolygon([zone.area.geometry.coordinates], srs_id=4326), zone.name, zone.internal_id, 
+        coordinates = geometry_to_coordinates(zone.area.geometry)
+        rows.append((MultiPolygon(coordinates, srs_id=4326), zone.name, zone.internal_id, 
                     zone.description, zone.municipality, str(zone.geography_id), ",".join(str(geography_id) for geography_id in zone.prev_geographies), zone.effective_date,
                     zone.propose_retirement, zone.published_date, zone.published_retire_date, zone.created_at, zone.modified_at,
                     zone.created_by, zone.last_modified_by, zone.phase,
@@ -154,18 +163,7 @@ def export(export_request: ExportRequest):
     
     monitoring = filter(lambda zone: zone.geography_type == "monitoring", zones)
     add_data_to_monitoring(gpkg=gpkg, zones=monitoring)
-
-
-    # Generate some random points and attributes
-    rows: list[tuple[MultiPolygon, str]] = []
-    for zone in zones:
-        coordinates_list = [[(pos.longitude, pos.latitude) for pos in sublist] for sublist in zone.area.geometry.coordinates]
-        print(coordinates_list)
-        multi_polygon = MultiPolygon([coordinates_list], srs_id=4326)
-        rows.append((multi_polygon, str(zone.geography_id)))
-
  
-
 
     res = create_zip(file_name)
     zip_file_name = f"{os.path.basename(file_name).split(".")[0]}.zip"
