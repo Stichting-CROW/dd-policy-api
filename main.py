@@ -12,9 +12,14 @@ from exporters import kml_export, geopackage_export, geopackage_import, export_r
 from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel
 from authorization import access_control
-from service_areas import get_available_operators, get_service_areas, get_service_area_history, get_service_area_delta
+from service_areas import get_available_operators, get_service_areas, get_service_area_history, get_service_area_delta, generate_service_area
 from datetime import date
 from modalities import Modality
+from operators import get_operators
+from model import operator
+from model.permit_limit import PermitLimit
+from model.permit_limit_overview import PermitLimitOverview
+from permits import create_permit_limit, delete_permit_limit, edit_permit_limit, get_permit_limit_history, permit_overview
 
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -124,6 +129,13 @@ def get_policies_route(municipality: Union[str, None] = None):
 def get_policy_route(policy_uuid: UUID):
     return policies.get_policy(policy_uuid)
 
+# This api generates a service area based on a desired service area from an operator minus all no parking zones + 
+@app.post("/public/generate_service_area")
+def generate_service_area_route(
+    request: generate_service_area.GenerateServiceAreaRequest,
+):
+    return generate_service_area.generate_service_area(request)
+
 @app.post("/kml/export")
 def get_kml_route(export_request: export_request.ExportRequest):
     result, zip_file_name = kml_export.export(export_request)
@@ -159,9 +171,37 @@ async def export_gpkg_route(file: UploadFile, municipality: str, current_user: a
         print(e)
         raise HTTPException(status_code=500, detail='Something went wrong')
 
-    
+@app.get("/operators", response_model=operator.OperatorResponse, response_model_exclude_none=True)
+def get_operators_route():
+    return get_operators.get_operators()
 
- 
+@app.post("/admin/permit_limit", status_code=201, response_model=PermitLimit, response_model_exclude_unset=True)
+def create_permit_limit_route(permit_limit: PermitLimit, current_user: access_control.User = Depends(access_control.get_current_user)):
+    return create_permit_limit.create_permit_limit(permit_limit=permit_limit, current_user=current_user)
+
+@app.put("/admin/permit_limit", status_code=204)
+def update_permit_limit_route(permit_limit: PermitLimit, current_user: access_control.User = Depends(access_control.get_current_user)):
+    return edit_permit_limit.edit_permit_limit(new_permit_limit=permit_limit, current_user=current_user)
+
+@app.delete("/admin/permit_limit/{permit_limit_id}", status_code=204)
+def delete_permit_limit_route(permit_limit_id: int, current_user: access_control.User = Depends(access_control.get_current_user)):
+    delete_permit_limit.delete_permit_limit(permit_limit_id=permit_limit_id, current_user=current_user)
+
+@app.get("/public/permit_limit_history", response_model=List[PermitLimit], response_model_exclude_none=True)
+def get_permit_limit_history_route(municipality: str, system_id: str, modality: Modality):
+    return get_permit_limit_history.get_permit_limit_history(municipality=municipality, system_id=system_id, modality=modality)
+
+@app.get("/public/permit_limit_overview", response_model=List[PermitLimitOverview], response_model_exclude_none=True)
+def get_permit_limit_overview_public_route(municipality: str | None = None, system_id: str | None = None):
+    return permit_overview.get_permit_overview(municipality=municipality, system_id=system_id)
+
+# This will be a non public overview
+@app.get("/permit_limit_overview", response_model=List[PermitLimit])
+def get_permit_limit_overview_route(): 
+    pass
+
+# @app.get("/active_operators")
+
 @app.on_event("shutdown")
 def shutdown_event():
     db_helper.shutdown_connection_pool()

@@ -9,6 +9,8 @@ from fastapi import HTTPException
 class ACL(BaseModel):
     is_admin: bool
     is_allowed_to_edit: bool
+    allowed_to_change_permit_limit: bool
+    allowed_to_change_permit_limit_historically: bool
     municipalities: Optional[set] = set()
 
 class User(BaseModel):
@@ -55,9 +57,13 @@ def query_acl(cur, email):
     
     user = cur.fetchone()
     is_allowed_to_edit = user["type_of_organisation"] == "ADMIN" or "MICROHUB_EDIT" in user["privileges"]
+    allowed_to_change_permit_limit =  user["type_of_organisation"] == "ADMIN" or "ORGANISATION_ADMIN" in user["privileges"]
+    allowed_to_change_permit_limit_historically = user["type_of_organisation"] == "ADMIN"
     acl_user = ACL(
         is_admin = user["type_of_organisation"] == "ADMIN",
         municipalities = user["data_owner_of_municipalities"],
-        is_allowed_to_edit=is_allowed_to_edit
+        is_allowed_to_edit=is_allowed_to_edit,
+        allowed_to_change_permit_limit = allowed_to_change_permit_limit,
+        allowed_to_change_permit_limit_historically=allowed_to_change_permit_limit_historically
     )
     return acl_user

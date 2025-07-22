@@ -15,6 +15,7 @@ def get_geographies(municipality: str):
     with db_helper.get_resource() as (cur, _):
         try:
             result = query_geographies(cur, municipality)
+            print(len(result), "geographies found")
             return generate_geographies_response(result=result)
         except Exception as e:
             print(e)
