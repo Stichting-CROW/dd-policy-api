@@ -6,10 +6,10 @@ from datetime import date, timedelta
 
 class PermitLimit(BaseModel):
     permit_limit_id: Optional[int] = None
-    municipality: str
-    system_id: str
     modality: Modality
     effective_date: date
+    municipality: str
+    system_id: str
     end_date: Optional[date] = None
     minimum_vehicles: Optional[int] = None
     maximum_vehicles: Optional[int] = None
