@@ -14,7 +14,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from authorization import access_control
 from service_areas import get_available_operators, get_service_areas, get_service_area_history, get_service_area_delta, generate_service_area
 from datetime import date
-from modalities import Modality
+from modalities import Modality, PropulsionType
 from operators import get_operators
 from model import operator
 from model.kpi import KPIReport
@@ -193,9 +193,10 @@ def get_operators_route():
 @app.get("/kpi_overview_operators", response_model=KPIReport, response_model_exclude_none=True)
 def get_kpi_overview_operators_route(
     start_date: date, end_date: date, 
-    municipality: str | None = None, system_id: str | None = None, modality: Modality | None = None,
+    municipality: str | None = None, system_id: str | None = None, form_factor: Modality | None = None,
+    propulsion_type: PropulsionType | None = None,
     current_user: access_control.User = Depends(access_control.get_current_user)) -> KPIReport:
-    return get_operator_modality_overview.get_operator_modality_kpi_overview(start_date=start_date, end_date=end_date, municipality=municipality, system_id=system_id, modality=modality, current_user=current_user)
+    return get_operator_modality_overview.get_operator_modality_kpi_overview(start_date=start_date, end_date=end_date, municipality=municipality, system_id=system_id, form_factor=form_factor, propulsion_type=propulsion_type, current_user=current_user)
 
 
 @app.on_event("shutdown")

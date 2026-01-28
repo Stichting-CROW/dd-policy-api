@@ -11,19 +11,22 @@ from authorization import access_control
 
 
 
-def get_operator_modality_kpi_overview(start_date: date, end_date: date, municipality: Optional[str], system_id: Optional[str], modality: Optional[str], current_user: access_control.User) -> KPIReport:
+def get_operator_modality_kpi_overview(start_date: date, end_date: date, municipality: Optional[str], system_id: Optional[str], form_factor: Optional[Modality], propulsion_type: Optional[PropulsionType], current_user: access_control.User) -> KPIReport:
     if municipality is None and system_id is None:
         raise HTTPException(status_code=400, detail="Either municipality or system_id must be provided.")
     
     if not current_user.acl.is_admin and not current_user.acl.municipalities.contains(municipality):
         raise HTTPException(status_code=403, detail="User not authorized to access data for this municipality.")
+    
+    if propulsion_type is not None and form_factor is None:
+        raise HTTPException(status_code=400, detail="If propulsion_type is provided, form_factor must also be provided.")
 
     all_stats: dict[str, list[GeometryModalityOperatorKPI]] = {}
     with db_helper.get_resource() as (cur, conn):
         try:
-            day_stats_res = query_day_stats(cur, municipality, system_id, start_date, end_date)
+            day_stats_res = query_day_stats(cur, municipality, system_id, form_factor, propulsion_type, start_date, end_date)
             all_stats = convert_stats_to_kpi_values(all_stats, day_stats_res)
-            query_moment_stats_res = query_moment_stats(cur, municipality, system_id, start_date, end_date)
+            query_moment_stats_res = query_moment_stats(cur, municipality, system_id, form_factor, propulsion_type, start_date, end_date)
             all_stats = convert_stats_to_kpi_values(all_stats, query_moment_stats_res)
 
             return KPIReport(
@@ -84,7 +87,7 @@ def convert_stats_to_kpi_values(all_stats: dict[str, list[GeometryModalityOperat
     return all_stats
 
 
-def query_moment_stats(cur, municipality: Optional[str], system_id: Optional[str], start_date: date, end_date: date):
+def query_moment_stats(cur, municipality: Optional[str], system_id: Optional[str], form_factor: Optional[Modality], propulsion_type: Optional[PropulsionType], start_date: date, end_date: date):
     stmt = """
        WITH limits_with_range AS (
             SELECT
@@ -127,6 +130,8 @@ def query_moment_stats(cur, municipality: Optional[str], system_id: Optional[str
             AND a.measurement_moment = 0
             AND (%(municipality_cbs)s IS NULL OR a.geometry_ref = %(municipality_cbs)s)
             AND (%(system_id)s IS NULL OR a.system_id = %(system_id)s)
+            AND (%(form_factor_like)s IS NULL OR a.vehicle_type LIKE %(form_factor_like)s)
+            AND (%(vehicle_type)s IS NULL OR a.vehicle_type LIKE %(vehicle_type)s)
         ),
         dimensions AS (
             SELECT DISTINCT
@@ -192,12 +197,14 @@ def query_moment_stats(cur, municipality: Optional[str], system_id: Optional[str
     cur.execute(stmt, {
         'system_id': system_id, 
         'municipality_cbs': municipality_cbs,
+        'form_factor_like': f'{form_factor.value}:%' if form_factor and propulsion_type is None else None,
+        'vehicle_type': f'{form_factor.value}:{propulsion_type.value}' if propulsion_type else None,
         'start_date': start_date,
         'end_date': end_date  
     })
     return cur.fetchall()
 
-def query_day_stats(cur, municipality: Optional[str], system_id: Optional[str], start_date: date, end_date: date):
+def query_day_stats(cur, municipality: Optional[str], system_id: Optional[str], form_factor: Optional[Modality], propulsion_type: Optional[PropulsionType], start_date: date, end_date: date):
     stmt = """
     WITH limits_with_range AS (
         SELECT
@@ -245,6 +252,8 @@ def query_day_stats(cur, municipality: Optional[str], system_id: Optional[str], 
             WHERE date BETWEEN %(start_date)s AND %(end_date)s
             AND (%(municipality_cbs)s IS NULL OR geometry_ref = %(municipality_cbs)s)
             AND (%(system_id)s IS NULL OR system_id = %(system_id)s)
+            AND (%(form_factor_like)s IS NULL OR vehicle_type LIKE %(form_factor_like)s)
+            AND (%(vehicle_type)s IS NULL OR vehicle_type LIKE %(vehicle_type)s)
             AND indicator IN (1, 6)
         ),
         dimensions AS (
@@ -294,6 +303,8 @@ def query_day_stats(cur, municipality: Optional[str], system_id: Optional[str], 
     cur.execute(stmt, {
         'system_id': system_id, 
         'municipality_cbs': municipality_cbs,
+        'form_factor_like': f'{form_factor.value}:%' if form_factor and propulsion_type is None else None,
+        'vehicle_type': f'{form_factor.value}:{propulsion_type.value}' if propulsion_type else None,
         'start_date': start_date,
         'end_date': end_date  
     })

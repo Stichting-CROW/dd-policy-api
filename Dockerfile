@@ -1,27 +1,24 @@
-FROM python:3.14-slim AS builder
+FROM python:3.14-slim 
 
 RUN apt-get update && \
     apt-get -y install libpq-dev gcc
 
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+# Change the working directory to the `app` directory
+WORKDIR /app
 
-FROM python:3.14-slim
+# Install dependencies
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project
 
-RUN apt-get update &&  \
-    apt-get install -y libpq-dev && \
-    rm -rf /var/lib/apt/lists/*
+# Copy the project into the image
+COPY . /app
 
-COPY --from=builder /opt/venv /opt/venv
+# Sync the project
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1\
-    PATH="/opt/venv/bin:$PATH"
-
-COPY . /srv/policy-api
-WORKDIR /srv/policy-api
-
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uv", "run", "fastapi", "run"]
