@@ -2,24 +2,22 @@ from tempfile import NamedTemporaryFile
 from typing import List, Union
 from uuid import UUID
 from typing import Annotated
-from fastapi import FastAPI, Depends, Header, Query, File, UploadFile, Body, HTTPException
+from fastapi import FastAPI, Depends, Query, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse
 
+from kpi import get_operator_modality_overview
 from zones import create_zone, zone, get_zones, delete_zone, edit_zone, publish_zones, make_concept, propose_retirement
 from db_helper import db_helper
-from mds import geographies, geography, stops, stop, policies, policy
+from mds import geographies, geography, stops, stop, policies
 from exporters import kml_export, geopackage_export, geopackage_import, export_request
 from fastapi.middleware.gzip import GZipMiddleware
-from pydantic import BaseModel
 from authorization import access_control
 from service_areas import get_available_operators, get_service_areas, get_service_area_history, get_service_area_delta, generate_service_area
 from datetime import date
 from modalities import Modality
 from operators import get_operators
 from model import operator
-from model.permit_limit import PermitLimit
-from model.permit_limit_overview import PermitLimitOverview
-from permits import create_permit_limit, delete_permit_limit, edit_permit_limit, get_permit_limit_history, permit_overview
+from model.kpi import KPIReport
 
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -175,32 +173,30 @@ async def export_gpkg_route(file: UploadFile, municipality: str, current_user: a
 def get_operators_route():
     return get_operators.get_operators()
 
-@app.post("/admin/permit_limit", status_code=201, response_model=PermitLimit, response_model_exclude_unset=True)
-def create_permit_limit_route(permit_limit: PermitLimit, current_user: access_control.User = Depends(access_control.get_current_user)):
-    return create_permit_limit.create_permit_limit(permit_limit=permit_limit, current_user=current_user)
+# # KPI Threshold endpoints (formerly permit_limit)
+# @app.post("/admin/kpi_threshold", status_code=201, response_model=KPIThreshold, response_model_exclude_unset=True)
+# def create_kpi_threshold_route(threshold: KPIThreshold, current_user: access_control.User = Depends(access_control.get_current_user)):
+#     return create_permit_limit.create_kpi_threshold(threshold=threshold, current_user=current_user)
 
-@app.put("/admin/permit_limit", status_code=204)
-def update_permit_limit_route(permit_limit: PermitLimit, current_user: access_control.User = Depends(access_control.get_current_user)):
-    return edit_permit_limit.edit_permit_limit(new_permit_limit=permit_limit, current_user=current_user)
+# @app.put("/admin/kpi_threshold", status_code=204)
+# def update_kpi_threshold_route(threshold: KPIThreshold, current_user: access_control.User = Depends(access_control.get_current_user)):
+#     return edit_permit_limit.edit_kpi_threshold(threshold=threshold, current_user=current_user)
 
-@app.delete("/admin/permit_limit/{permit_limit_id}", status_code=204)
-def delete_permit_limit_route(permit_limit_id: int, current_user: access_control.User = Depends(access_control.get_current_user)):
-    delete_permit_limit.delete_permit_limit(permit_limit_id=permit_limit_id, current_user=current_user)
+# @app.delete("/admin/kpi_threshold/{threshold_id}", status_code=204)
+# def delete_kpi_threshold_route(threshold_id: int, current_user: access_control.User = Depends(access_control.get_current_user)):
+#     delete_permit_limit.delete_kpi_threshold(threshold_id=threshold_id, current_user=current_user)
 
-@app.get("/public/permit_limit_history", response_model=List[PermitLimit], response_model_exclude_none=True)
-def get_permit_limit_history_route(municipality: str, system_id: str, modality: Modality):
-    return get_permit_limit_history.get_permit_limit_history(municipality=municipality, system_id=system_id, modality=modality)
+# @app.get("/public/kpi_threshold_history", response_model=List[KPIThreshold], response_model_exclude_none=True)
+# def get_kpi_threshold_history_route(municipality: str, system_id: str, modality: Modality):
+#     return get_permit_limit_history.get_kpi_threshold_history(municipality=municipality, system_id=system_id, modality=modality)
 
-@app.get("/public/permit_limit_overview", response_model=List[PermitLimitOverview], response_model_exclude_none=True)
-def get_permit_limit_overview_public_route(municipality: str | None = None, system_id: str | None = None):
-    return permit_overview.get_permit_overview(municipality=municipality, system_id=system_id)
+@app.get("/kpi_overview_operators", response_model=KPIReport, response_model_exclude_none=True)
+def get_kpi_overview_operators_route(
+    start_date: date, end_date: date, 
+    municipality: str | None = None, system_id: str | None = None, modality: Modality | None = None,
+    current_user: access_control.User = Depends(access_control.get_current_user)) -> KPIReport:
+    return get_operator_modality_overview.get_operator_modality_kpi_overview(start_date=start_date, end_date=end_date, municipality=municipality, system_id=system_id, modality=modality, current_user=current_user)
 
-# This will be a non public overview
-@app.get("/permit_limit_overview", response_model=List[PermitLimit])
-def get_permit_limit_overview_route(): 
-    pass
-
-# @app.get("/active_operators")
 
 @app.on_event("shutdown")
 def shutdown_event():

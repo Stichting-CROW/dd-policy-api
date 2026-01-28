@@ -1,4 +1,4 @@
-FROM python:3.12-slim AS builder
+FROM python:3.14-slim AS builder
 
 RUN apt-get update && \
     apt-get -y install libpq-dev gcc
@@ -9,7 +9,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 RUN apt-get update &&  \
     apt-get install -y libpq-dev && \

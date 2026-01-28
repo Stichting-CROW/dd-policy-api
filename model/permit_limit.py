@@ -1,26 +1,17 @@
-from pydantic import BaseModel, field_validator
-from typing import Optional
-import isodate
-from modalities import Modality
-from datetime import date, timedelta
+"""
+DEPRECATED: This module is deprecated. Use model.kpi instead.
 
-class PermitLimit(BaseModel):
-    permit_limit_id: Optional[int] = None
-    modality: Modality
-    effective_date: date
-    municipality: str
-    system_id: str
-    end_date: Optional[date] = None
-    minimum_vehicles: Optional[int] = None
-    maximum_vehicles: Optional[int] = None
-    minimal_number_of_trips_per_vehicle: Optional[float] = None
-    max_parking_duration: Optional[timedelta] = None  # in days
-    future_permit: 'Optional[PermitLimit]' = None
+This module provides backwards compatibility aliases for the old PermitLimit model.
+New code should use KPIThreshold from model.kpi.
+"""
+import warnings
+from model.kpi import KPIThreshold
 
+# Backwards compatibility alias
+PermitLimit = KPIThreshold
 
-    @field_validator('max_parking_duration', mode='before')
-    @classmethod
-    def parse_iso8601_duration(cls, value):
-        if isinstance(value, str):
-            return isodate.parse_duration(value)
-        return value
+warnings.warn(
+    "model.permit_limit is deprecated, use model.kpi.KPIThreshold instead",
+    DeprecationWarning,
+    stacklevel=2
+)
