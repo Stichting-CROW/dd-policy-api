@@ -17,9 +17,13 @@ def edit_geometry_operator_modality_limit(limit: GeometryOperatorModalityLimit, 
 
     with db_helper.get_resource() as (cur, conn):
         try:
-            checks_current = check_existing_geometry_operator_modality_limit(cur, limit.geometry_operator_modality_limit_id)
-            if checks_current is None:
+            is_in_past, geometry_ref = check_existing_geometry_operator_modality_limit(cur, limit.geometry_operator_modality_limit_id)
+            if is_in_past is None:
                 raise HTTPException(status_code=404, detail="Geometry operator modality limit not found.")
+            
+            if geometry_ref and not check_if_user_has_edit_permission(geometry_ref, current_user.acl):
+                raise HTTPException(status_code=403, detail="This user is not allowed to change geometry operator modality limits historically.")   
+            
             
             update_geometry_operator_modality_limit(cur, limit)
             conn.commit()

@@ -57,7 +57,7 @@ class GeometryOperatorModalityLimit(BaseModel):
             'form_factor': self.form_factor.value.lower(),
             'propulsion_type': self.propulsion_type.value.lower(),
             'effective_date': self.effective_date,
-            'limits': self.limits.model_dump(exclude_none=True)
+            'limits': self.limits.model_dump_json(exclude_none=True)
         }
 
 

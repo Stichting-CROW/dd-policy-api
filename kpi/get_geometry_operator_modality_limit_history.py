@@ -27,10 +27,7 @@ def query_geometry_operator_modality_limit_history(cur, geometry_ref: str, opera
         form_factor,
         propulsion_type,
         effective_date,
-        limits->>'minimum_vehicles' as minimum_vehicles,
-        limits->>'maximum_vehicles' as maximum_vehicles,
-        limits->>'minimal_number_of_trips_per_vehicle' as minimal_number_of_trips_per_vehicle,
-        limits->>'max_parking_duration' as max_parking_duration,
+        limits,
         LEAD(effective_date, 1) OVER (
             PARTITION BY geometry_ref, operator, form_factor, propulsion_type
             ORDER BY effective_date

@@ -13,9 +13,12 @@ def delete_geometry_operator_modality_limit(limit_id: int, current_user: access_
 
     with db_helper.get_resource() as (cur, conn):
         try:
-            is_in_past = check_existing_geometry_operator_modality_limit(cur, limit_id)
+            is_in_past, geometry_ref = check_existing_geometry_operator_modality_limit(cur, limit_id)
             if is_in_past is None:
                 raise HTTPException(status_code=404, detail="Geometry operator modality limit not found.")
+            
+            if geometry_ref and not check_if_user_has_edit_permission(geometry_ref, current_user.acl):
+                raise HTTPException(status_code=403, detail="This user is not allowed to change geometry operator modality limits historically.")
         
             delete_geometry_operator_modality_limit_query(cur, limit_id)
             conn.commit()

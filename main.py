@@ -179,19 +179,19 @@ def get_operators_route():
     return get_operators.get_operators()
 
 # Geometry Operator Modality Limit endpoints
-@app.post("/admin/geometry_operator_modality_threshold", status_code=201, response_model=GeometryOperatorModalityLimitResponse, response_model_exclude_unset=True)
+@app.post("/admin/geometry_operator_modality_limit", status_code=201, response_model=GeometryOperatorModalityLimitResponse, response_model_exclude_unset=True)
 def create_geometry_operator_modality_limit_route(limit: GeometryOperatorModalityLimit, current_user: access_control.User = Depends(access_control.get_current_user)):
     return create_geometry_operator_modality_limit(limit=limit, current_user=current_user)
 
-@app.put("/admin/geometry_operator_modality_threshold", status_code=204)
+@app.put("/admin/geometry_operator_modality_limit", status_code=204)
 def update_geometry_operator_modality_limit_route(limit: GeometryOperatorModalityLimit, current_user: access_control.User = Depends(access_control.get_current_user)):
     return edit_geometry_operator_modality_limit(limit=limit, current_user=current_user)
 
-@app.delete("/admin/geometry_operator_modality_threshold/{limit_id}", status_code=204)
+@app.delete("/admin/geometry_operator_modality_limit/{limit_id}", status_code=204)
 def delete_geometry_operator_modality_limit_route(limit_id: int, current_user: access_control.User = Depends(access_control.get_current_user)):
     delete_geometry_operator_modality_limit(limit_id=limit_id, current_user=current_user)
 
-@app.get("/public/geometry_operator_modality_threshold_history", response_model=List[GeometryOperatorModalityLimitResponse], response_model_exclude_none=True)
+@app.get("/public/geometry_operator_modality_limit_history", response_model=List[GeometryOperatorModalityLimitResponse], response_model_exclude_none=True)
 def get_geometry_operator_modality_limit_history_route(
     geometry_ref: str, 
     operator: str, 

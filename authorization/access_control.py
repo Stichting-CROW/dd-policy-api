@@ -18,6 +18,7 @@ class User(BaseModel):
     acl: ACL
 
 def get_user_acl(cur, token):
+    print(token)
     encoded_token = token.split(" ")[1]
     # Verification is performed by kong (reverse proxy), 
     # therefore token is not verified for a second time so that the secret is only stored there.
