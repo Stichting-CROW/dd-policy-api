@@ -18,6 +18,11 @@ from modalities import Modality, PropulsionType
 from operators import get_operators
 from model import operator
 from model.kpi import KPIReport
+from model.geometry_operator_modality_limit import GeometryOperatorModalityLimit, GeometryOperatorModalityLimitResponse
+from kpi.create_geometry_operator_modality_limit import create_geometry_operator_modality_limit
+from kpi.edit_geometry_operator_modality_limit import edit_geometry_operator_modality_limit
+from kpi.delete_geometry_operator_modality_limit import delete_geometry_operator_modality_limit
+from kpi.get_geometry_operator_modality_limit_history import get_geometry_operator_modality_limit_history
 
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -173,22 +178,32 @@ async def export_gpkg_route(file: UploadFile, municipality: str, current_user: a
 def get_operators_route():
     return get_operators.get_operators()
 
-# # KPI Threshold endpoints (formerly permit_limit)
-# @app.post("/admin/kpi_threshold", status_code=201, response_model=KPIThreshold, response_model_exclude_unset=True)
-# def create_kpi_threshold_route(threshold: KPIThreshold, current_user: access_control.User = Depends(access_control.get_current_user)):
-#     return create_permit_limit.create_kpi_threshold(threshold=threshold, current_user=current_user)
+# Geometry Operator Modality Limit endpoints
+@app.post("/admin/geometry_operator_modality_threshold", status_code=201, response_model=GeometryOperatorModalityLimitResponse, response_model_exclude_unset=True)
+def create_geometry_operator_modality_limit_route(limit: GeometryOperatorModalityLimit, current_user: access_control.User = Depends(access_control.get_current_user)):
+    return create_geometry_operator_modality_limit(limit=limit, current_user=current_user)
 
-# @app.put("/admin/kpi_threshold", status_code=204)
-# def update_kpi_threshold_route(threshold: KPIThreshold, current_user: access_control.User = Depends(access_control.get_current_user)):
-#     return edit_permit_limit.edit_kpi_threshold(threshold=threshold, current_user=current_user)
+@app.put("/admin/geometry_operator_modality_threshold", status_code=204)
+def update_geometry_operator_modality_limit_route(limit: GeometryOperatorModalityLimit, current_user: access_control.User = Depends(access_control.get_current_user)):
+    return edit_geometry_operator_modality_limit(limit=limit, current_user=current_user)
 
-# @app.delete("/admin/kpi_threshold/{threshold_id}", status_code=204)
-# def delete_kpi_threshold_route(threshold_id: int, current_user: access_control.User = Depends(access_control.get_current_user)):
-#     delete_permit_limit.delete_kpi_threshold(threshold_id=threshold_id, current_user=current_user)
+@app.delete("/admin/geometry_operator_modality_threshold/{limit_id}", status_code=204)
+def delete_geometry_operator_modality_limit_route(limit_id: int, current_user: access_control.User = Depends(access_control.get_current_user)):
+    delete_geometry_operator_modality_limit(limit_id=limit_id, current_user=current_user)
 
-# @app.get("/public/kpi_threshold_history", response_model=List[KPIThreshold], response_model_exclude_none=True)
-# def get_kpi_threshold_history_route(municipality: str, system_id: str, modality: Modality):
-#     return get_permit_limit_history.get_kpi_threshold_history(municipality=municipality, system_id=system_id, modality=modality)
+@app.get("/public/geometry_operator_modality_threshold_history", response_model=List[GeometryOperatorModalityLimitResponse], response_model_exclude_none=True)
+def get_geometry_operator_modality_limit_history_route(
+    geometry_ref: str, 
+    operator: str, 
+    form_factor: Modality, 
+    propulsion_type: PropulsionType
+):
+    return get_geometry_operator_modality_limit_history(
+        geometry_ref=geometry_ref, 
+        operator=operator, 
+        form_factor=form_factor, 
+        propulsion_type=propulsion_type
+    )
 
 @app.get("/kpi_overview_operators", response_model=KPIReport, response_model_exclude_none=True)
 def get_kpi_overview_operators_route(

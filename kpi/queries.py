@@ -1,13 +1,13 @@
-def check_existing_kpi_threshold(cur, threshold_id: int):
-    """Check if a KPI threshold exists and return its status."""
+def check_existing_geometry_operator_modality_limit(cur, limit_id: int):
+    """Check if a geometry operator modality limit exists and return its status."""
     stmt = """
-    SELECT CURRENT_DATE > effective_date AS is_in_past, municipality
-    FROM permit_limit
-    WHERE permit_limit_id = %s;
+    SELECT CURRENT_DATE > effective_date AS is_in_past
+    FROM geometry_operator_modality_limit
+    WHERE geometry_operator_modality_limit_id = %s;
     """
-    cur.execute(stmt, (threshold_id,))
-    return cur.fetchone()
+    cur.execute(stmt, (limit_id,))
+    result = cur.fetchone()
+    if result:
+        return result["is_in_past"]
+    return None
 
-
-# Backwards compatibility alias
-check_existing_permit_limit = check_existing_kpi_threshold
