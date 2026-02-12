@@ -15,7 +15,7 @@ def get_operator_modality_kpi_overview(start_date: date, end_date: date, municip
     if municipality is None and system_id is None:
         raise HTTPException(status_code=400, detail="Either municipality or system_id must be provided.")
     
-    if not current_user.acl.is_admin and not current_user.acl.municipalities.contains(municipality):
+    if not current_user.acl.is_admin and not municipality in current_user.acl.municipalities:
         raise HTTPException(status_code=403, detail="User not authorized to access data for this municipality.")
     
     if propulsion_type is not None and form_factor is None:
