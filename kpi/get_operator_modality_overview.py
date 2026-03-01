@@ -97,12 +97,16 @@ def query_moment_stats(cur, municipality: Optional[str], system_id: Optional[str
                 form_factor,
                 propulsion_type,
                 effective_date AS valid_from,
-                LEAD(effective_date) OVER (
-                    PARTITION BY geometry_ref, form_factor, propulsion_type
+                (LEAD(effective_date) OVER (
+                    PARTITION BY geometry_ref, operator, form_factor, propulsion_type
                     ORDER BY effective_date
-                ) - interval '1 day' AS valid_to,
+                ) - interval '1 day')::date AS valid_to,
                 limits
             FROM geometry_operator_modality_limit
+            WHERE geometry_ref = %(municipality_cbs)s OR %(municipality_cbs)s IS NULL
+            AND (%(system_id)s IS NULL OR operator = %(system_id)s)
+            AND (%(form_factor_like)s IS NULL OR form_factor LIKE %(form_factor_like)s)
+            AND (%(vehicle_type)s IS NULL OR propulsion_type LIKE %(vehicle_type)s)
         ),
         base AS (
             SELECT
@@ -214,12 +218,16 @@ def query_day_stats(cur, municipality: Optional[str], system_id: Optional[str], 
             form_factor,
             propulsion_type,
             effective_date AS valid_from,
-            LEAD(effective_date) OVER (
-                PARTITION BY geometry_ref, form_factor, propulsion_type
+            (LEAD(effective_date) OVER (
+                PARTITION BY geometry_ref, operator, form_factor, propulsion_type
                 ORDER BY effective_date
-            ) - interval '1 day' AS valid_to,
+            ) - interval '1 day')::date  AS valid_to,
             limits
         FROM geometry_operator_modality_limit
+        WHERE geometry_ref = %(municipality_cbs)s OR %(municipality_cbs)s IS NULL
+        AND (%(system_id)s IS NULL OR operator = %(system_id)s)
+        AND (%(form_factor_like)s IS NULL OR form_factor LIKE %(form_factor_like)s)
+        AND (%(vehicle_type)s IS NULL OR propulsion_type LIKE %(vehicle_type)s)
     )
 
       SELECT
