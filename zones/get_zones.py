@@ -84,8 +84,6 @@ def query_zones(cur, municipality, geography_types, phases, affected_modalities:
         ) as all_zones
         WHERE phase = ANY(%s);
     """
-    print(phases)
-    print(affected_modalities)
     cur.execute(stmt, (municipality == None, municipality, len(geography_types) == 0, geography_types, affected_modalities, phases))
     return cur.fetchall()
 

@@ -106,7 +106,7 @@ def get_microhubs(gpkg: GeoPackage, municipality_code: str):
             location=centroid_feature,
             status=convert_microhub_control_status(feature[9]),
             capacity=convert_capacity(feature),
-            is_virtual=feature[11]
+            is_virtual=feature[11] or True
         )
 
         new_zone = Zone(
@@ -120,7 +120,7 @@ def get_microhubs(gpkg: GeoPackage, municipality_code: str):
             affected_modalities=["moped", "bicycle", "cargo_bicycle"],
         )
 
-        new_zone = create_zone.derive_affected_modalities(new_zone)
+        new_zone.affected_modalities = create_zone.derive_affected_modalities(new_zone)
 
         if feature[1] and is_valid_uuid(feature[1]):
             new_zone.geography_id = uuid.UUID(feature[1])

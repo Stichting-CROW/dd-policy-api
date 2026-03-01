@@ -22,7 +22,6 @@ def derive_affected_modalities(zone: Zone):
     if zone.geography_type != GeographyType.stop:
         return zone.affected_modalities
     # if "combined" the default modes are affected
-    print(zone.stop.capacity)
     if "combined" in zone.stop.capacity:
         return [Modality.bicycle, Modality.moped, Modality.cargo_bicycle]
     affected_modalities: list[Modality] = []
