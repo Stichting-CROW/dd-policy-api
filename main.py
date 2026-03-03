@@ -23,6 +23,9 @@ from kpi.create_geometry_operator_modality_limit import create_geometry_operator
 from kpi.edit_geometry_operator_modality_limit import edit_geometry_operator_modality_limit
 from kpi.delete_geometry_operator_modality_limit import delete_geometry_operator_modality_limit
 from kpi.get_geometry_operator_modality_limit_history import get_geometry_operator_modality_limit_history
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -170,9 +173,9 @@ async def export_gpkg_route(file: UploadFile, municipality: str, current_user: a
         finally:
             file.file.close()
         return geopackage_import.gpkg_import(temp.name, municipality, current_user)
-    except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail='Something went wrong')
+    except Exception:
+        logging.exception("Error during geopackage import")
+        raise HTTPException(status_code=500, detail='Something went wrong, check server logs for more details')
 
 @app.get("/operators", response_model=operator.OperatorResponse, response_model_exclude_none=True)
 def get_operators_route():

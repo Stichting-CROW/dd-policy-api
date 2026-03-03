@@ -10,7 +10,7 @@ from fastapi import UploadFile, HTTPException
 from authorization import access_control
 from db_helper import db_helper
 from fudgeo.geopkg import FeatureClass, Field, GeoPackage, SpatialReferenceSystem
-from fudgeo.geometry import MultiPolygon
+from fudgeo.geometry import MultiPolygon, Polygon as FudgeoPolygon
 from geojson_pydantic.types import Position2D
 from shapely.geometry import shape
 from datetime import datetime
@@ -64,8 +64,8 @@ def convert_microhub_control_status(status: str) -> Dict[str, bool]:
         "control_automatic": False
     }
 
-def extract_area_polygon(feature):
-    coords_list = [Position2D(float(coord[0]), float(coord[1])) for coord in feature.polygons[0].rings[0].coordinates]
+def extract_area_polygon(feature: FudgeoPolygon):
+    coords_list = [Position2D(float(coord[0]), float(coord[1])) for coord in feature.rings[0].coordinates]
     return Polygon(type='Polygon', coordinates=[coords_list])
 
 def extract_area_multi_polygon(feature):
@@ -78,7 +78,7 @@ def extract_area_multi_polygon(feature):
     return MultiPolygonPydantic(type='MultiPolygon', coordinates=[coords_list])
     
 def extract_area(feature):
-    if len(feature[0].polygons) > 1:
+    if isinstance(feature[0], MultiPolygon):
         return extract_area_multi_polygon(feature[0])
     return extract_area_polygon(feature[0])
 
@@ -91,6 +91,7 @@ def get_microhubs(gpkg: GeoPackage, municipality_code: str):
     new_zones = []
     now = datetime.now()
     for i, feature in enumerate(features):
+        print(feature)
         area = extract_area(feature)
         area_feature = Feature[Union[Polygon, MultiPolygonPydantic], Dict](type='Feature', properties={}, geometry=area)
 
@@ -136,9 +137,7 @@ def get_no_parking(gpkg: GeoPackage, municipality_code: str):
     
     now = datetime.now()
     for i, feature in enumerate(features):
-        # We can improve this in the future for multipolygons.
-        coords_list = [Position2D(float(coord[0]), float(coord[1])) for coord in feature[0].polygons[0].rings[0].coordinates]
-        area = Polygon(type='Polygon', coordinates=[coords_list])
+        area = extract_area(feature)
         area_feature = Feature[Union[Polygon, MultiPolygonPydantic], Dict](type='Feature', properties={}, geometry=area)
 
 
@@ -165,9 +164,7 @@ def get_monitoring(gpkg: GeoPackage, municipality_code: str):
     new_zones = []
     now = datetime.now()
     for i, feature in enumerate(features):
-        # We can improve this in the future for multipolygons.
-        coords_list = [Position2D(float(coord[0]), float(coord[1])) for coord in feature[0].polygons[0].rings[0].coordinates]
-        area = Polygon(type='Polygon', coordinates=[coords_list])
+        area = extract_area(feature)
         area_feature = Feature[Union[Polygon, MultiPolygonPydantic], Dict](type='Feature', properties={}, geometry=area)
 
         new_zone = Zone(

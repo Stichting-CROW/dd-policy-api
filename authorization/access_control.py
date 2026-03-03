@@ -1,4 +1,6 @@
 
+import logging
+
 import jwt
 from pydantic import BaseModel
 from typing import Union, Optional
@@ -18,7 +20,6 @@ class User(BaseModel):
     acl: ACL
 
 def get_user_acl(cur, token):
-    print(token)
     encoded_token = token.split(" ")[1]
     # Verification is performed by kong (reverse proxy), 
     # therefore token is not verified for a second time so that the secret is only stored there.
@@ -37,9 +38,10 @@ async def get_current_user(authorization: Union[str, None] = Header(None)):
                 acl=result
             )
         except HTTPException as e:
+            logging.warning(f"HTTPException while retrieving user ACL: {e.detail}")
             raise e
         except Exception as e:
-            print(e)
+            logging.exception("Error while retrieving user ACL")
             raise HTTPException(status_code=500, detail="DB problem, check server log for details.")
 
 def query_acl(cur, email):

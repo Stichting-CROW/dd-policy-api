@@ -245,14 +245,14 @@ wheels = [
 
 [[package]]
 name = "fudgeo"
-version = "0.8.0"
+version = "1.5.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bottleneck" },
     { name = "numpy" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/23/03/52d0ec6270fd9637ffc8a8d2b30dc61f5b47b87122bc968f35368fb2e3ed/fudgeo-0.8.0-py3-none-any.whl", hash = "sha256:a8fcbd7ff678550e9fe5d6fed703fa366a6bc0e3a735be8696495f4e2af66b49", size = 47135 },
+    { url = "https://files.pythonhosted.org/packages/99/db/01700aaa2c55b6cec255567b62c70e9120fb1f6713e09fd3bfca33d14ca8/fudgeo-1.5.6-py3-none-any.whl", hash = "sha256:d154b198945f1e2de621c873af7b2aaa18d55f0df2d0db6ca9fa5fc86c46ac47", size = 60082 },
 ]
 
 [[package]]
@@ -444,7 +444,7 @@ dependencies = [
 requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = "==0.128.0" },
     { name = "fastkml", specifier = "==0.12" },
-    { name = "fudgeo", specifier = "==0.8.0" },
+    { name = "fudgeo", specifier = "==1.5.6" },
     { name = "geojson-pydantic", specifier = "==1.1.0" },
     { name = "isodate", specifier = "==0.7.2" },
     { name = "psycopg2", specifier = "==2.9.10" },
