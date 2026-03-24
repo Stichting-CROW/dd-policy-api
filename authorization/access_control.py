@@ -13,6 +13,7 @@ class ACL(BaseModel):
     is_allowed_to_edit: bool
     allowed_to_change_geometry_operator_modality_limit: bool
     municipalities: Optional[set] = set()
+    operators: Optional[set] = set()
 
 class User(BaseModel):
     email: str
@@ -47,7 +48,7 @@ async def get_current_user(authorization: Union[str, None] = Header(None)):
 def query_acl(cur, email):
     stmt = """
     SELECT user_id, type_of_organisation, 
-    privileges, data_owner_of_municipalities 
+    privileges, data_owner_of_municipalities, data_owner_of_operators
     FROM user_account 
     JOIN organisation USING(organisation_id) 
     WHERE user_id = %s;
@@ -63,6 +64,7 @@ def query_acl(cur, email):
     acl_user = ACL(
         is_admin = user["type_of_organisation"] == "ADMIN",
         municipalities = user["data_owner_of_municipalities"],
+        operators = user["data_owner_of_operators"],
         is_allowed_to_edit=is_allowed_to_edit,
         allowed_to_change_geometry_operator_modality_limit=allowed_to_change_geometry_operator_modality_limit
     )

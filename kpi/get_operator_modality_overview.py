@@ -10,13 +10,27 @@ from datetime import date
 from authorization import access_control
 
 
+def check_is_user_authorized_to_view_kpi(municipality: Optional[str], system_id: Optional[str], current_user: access_control.User) -> bool:    
+    # For admins, always allow
+    if current_user.acl.is_admin:
+        return True
+    
+    # For municipalities, allow when municipality parameter is used.
+    if municipality and municipality in current_user.acl.municipalities:
+        return True
+    
+    # For operators, allow when system_id parameter is used.
+    if system_id and system_id in current_user.acl.operators:
+        return True
+    
+    return False
 
 def get_operator_modality_kpi_overview(start_date: date, end_date: date, municipality: Optional[str], system_id: Optional[str], form_factor: Optional[Modality], propulsion_type: Optional[PropulsionType], current_user: access_control.User) -> KPIReport:
     if municipality is None and system_id is None:
         raise HTTPException(status_code=400, detail="Either municipality or system_id must be provided.")
     
-    if not current_user.acl.is_admin and not municipality in current_user.acl.municipalities:
-        raise HTTPException(status_code=403, detail="User not authorized to access data for this municipality.")
+    if not check_is_user_authorized_to_view_kpi(municipality, system_id, current_user):
+        raise HTTPException(status_code=403, detail="User not authorized to access this KPI data.")
     
     if propulsion_type is not None and form_factor is None:
         raise HTTPException(status_code=400, detail="If propulsion_type is provided, form_factor must also be provided.")
@@ -103,7 +117,7 @@ def query_moment_stats(cur, municipality: Optional[str], system_id: Optional[str
                 ) - interval '1 day')::date AS valid_to,
                 limits
             FROM geometry_operator_modality_limit
-            WHERE geometry_ref = %(municipality_cbs)s OR %(municipality_cbs)s IS NULL
+            WHERE geometry_ref = %(municipality_cbs)s OR (%(municipality_cbs)s IS NULL AND geometry_ref LIKE 'cbs:GM%%')
             AND (%(system_id)s IS NULL OR operator = %(system_id)s)
             AND (%(form_factor_like)s IS NULL OR form_factor LIKE %(form_factor_like)s)
             AND (%(vehicle_type)s IS NULL OR propulsion_type LIKE %(vehicle_type)s)
@@ -132,7 +146,7 @@ def query_moment_stats(cur, municipality: Optional[str], system_id: Optional[str
             AND a.indicator IN (2, 3, 4, 5)
             AND b.indicator = 1
             AND a.measurement_moment = 0
-            AND (%(municipality_cbs)s IS NULL OR a.geometry_ref = %(municipality_cbs)s)
+            AND (%(municipality_cbs)s IS NULL AND a.geometry_ref LIKE 'cbs:GM%%') OR a.geometry_ref = %(municipality_cbs)s
             AND (%(system_id)s IS NULL OR a.system_id = %(system_id)s)
             AND (%(form_factor_like)s IS NULL OR a.vehicle_type LIKE %(form_factor_like)s)
             AND (%(vehicle_type)s IS NULL OR a.vehicle_type LIKE %(vehicle_type)s)
@@ -224,7 +238,7 @@ def query_day_stats(cur, municipality: Optional[str], system_id: Optional[str], 
             ) - interval '1 day')::date  AS valid_to,
             limits
         FROM geometry_operator_modality_limit
-        WHERE geometry_ref = %(municipality_cbs)s OR %(municipality_cbs)s IS NULL
+        WHERE geometry_ref = %(municipality_cbs)s OR (%(municipality_cbs)s IS NULL AND geometry_ref LIKE 'cbs:GM%%')
         AND (%(system_id)s IS NULL OR operator = %(system_id)s)
         AND (%(form_factor_like)s IS NULL OR form_factor LIKE %(form_factor_like)s)
         AND (%(vehicle_type)s IS NULL OR propulsion_type LIKE %(vehicle_type)s)
@@ -258,7 +272,7 @@ def query_day_stats(cur, municipality: Optional[str], system_id: Optional[str], 
                 value
             FROM day_statistics
             WHERE date BETWEEN %(start_date)s AND %(end_date)s
-            AND (%(municipality_cbs)s IS NULL OR geometry_ref = %(municipality_cbs)s)
+            AND (%(municipality_cbs)s IS NULL AND geometry_ref LIKE 'cbs:GM%%') OR geometry_ref = %(municipality_cbs)s
             AND (%(system_id)s IS NULL OR system_id = %(system_id)s)
             AND (%(form_factor_like)s IS NULL OR vehicle_type LIKE %(form_factor_like)s)
             AND (%(vehicle_type)s IS NULL OR vehicle_type LIKE %(vehicle_type)s)
