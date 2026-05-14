@@ -117,7 +117,7 @@ def query_moment_stats(cur, municipality: Optional[str], system_id: Optional[str
                 ) - interval '1 day')::date AS valid_to,
                 limits
             FROM geometry_operator_modality_limit
-            WHERE geometry_ref = %(municipality_cbs)s OR (%(municipality_cbs)s IS NULL AND geometry_ref LIKE 'cbs:GM%%')
+            WHERE (geometry_ref = %(municipality_cbs)s OR (%(municipality_cbs)s IS NULL AND geometry_ref LIKE 'cbs:GM%%'))
             AND (%(system_id)s IS NULL OR operator = %(system_id)s)
             AND (%(form_factor_like)s IS NULL OR form_factor LIKE %(form_factor_like)s)
             AND (%(vehicle_type)s IS NULL OR propulsion_type LIKE %(vehicle_type)s)
@@ -146,7 +146,7 @@ def query_moment_stats(cur, municipality: Optional[str], system_id: Optional[str
             AND a.indicator IN (2, 3, 4, 5)
             AND b.indicator = 1
             AND a.measurement_moment = 0
-            AND (%(municipality_cbs)s IS NULL AND a.geometry_ref LIKE 'cbs:GM%%') OR a.geometry_ref = %(municipality_cbs)s
+            AND ((%(municipality_cbs)s IS NULL AND a.geometry_ref LIKE 'cbs:GM%%') OR a.geometry_ref = %(municipality_cbs)s)
             AND (%(system_id)s IS NULL OR a.system_id = %(system_id)s)
             AND (%(form_factor_like)s IS NULL OR a.vehicle_type LIKE %(form_factor_like)s)
             AND (%(vehicle_type)s IS NULL OR a.vehicle_type LIKE %(vehicle_type)s)
@@ -238,7 +238,7 @@ def query_day_stats(cur, municipality: Optional[str], system_id: Optional[str], 
             ) - interval '1 day')::date  AS valid_to,
             limits
         FROM geometry_operator_modality_limit
-        WHERE geometry_ref = %(municipality_cbs)s OR (%(municipality_cbs)s IS NULL AND geometry_ref LIKE 'cbs:GM%%')
+        WHERE (geometry_ref = %(municipality_cbs)s OR (%(municipality_cbs)s IS NULL AND geometry_ref LIKE 'cbs:GM%%'))
         AND (%(system_id)s IS NULL OR operator = %(system_id)s)
         AND (%(form_factor_like)s IS NULL OR form_factor LIKE %(form_factor_like)s)
         AND (%(vehicle_type)s IS NULL OR propulsion_type LIKE %(vehicle_type)s)
@@ -272,7 +272,7 @@ def query_day_stats(cur, municipality: Optional[str], system_id: Optional[str], 
                 value
             FROM day_statistics
             WHERE date BETWEEN %(start_date)s AND %(end_date)s
-            AND (%(municipality_cbs)s IS NULL AND geometry_ref LIKE 'cbs:GM%%') OR geometry_ref = %(municipality_cbs)s
+            AND ((%(municipality_cbs)s IS NULL AND geometry_ref LIKE 'cbs:GM%%') OR geometry_ref = %(municipality_cbs)s)
             AND (%(system_id)s IS NULL OR system_id = %(system_id)s)
             AND (%(form_factor_like)s IS NULL OR vehicle_type LIKE %(form_factor_like)s)
             AND (%(vehicle_type)s IS NULL OR vehicle_type LIKE %(vehicle_type)s)
