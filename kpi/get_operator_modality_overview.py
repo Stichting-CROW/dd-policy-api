@@ -133,6 +133,8 @@ def query_moment_stats(cur, municipality: Optional[str], system_id: Optional[str
                     WHEN 3 THEN 'percentage_parked_longer_then_3_days'
                     WHEN 4 THEN 'percentage_parked_longer_then_7_days'
                     WHEN 5 THEN 'percentage_parked_longer_then_14_days'
+                    WHEN 7 THEN 'percentage_non_operational_longer_then_1_day'
+                    WHEN 8 THEN 'percentage_non_operational_longer_then_7_days'
                 END AS indicator,
                 ROUND((a.value / NULLIF(b.value, 0)) * 100, 1) AS value
             FROM moment_statistics a
@@ -143,7 +145,7 @@ def query_moment_stats(cur, municipality: Optional[str], system_id: Optional[str
                 AND a.vehicle_type = b.vehicle_type
                 AND a.system_id = b.system_id
             WHERE a.date BETWEEN %(start_date)s AND %(end_date)s
-            AND a.indicator IN (2, 3, 4, 5)
+            AND a.indicator IN (2, 3, 4, 5, 7, 8)
             AND b.indicator = 1
             AND a.measurement_moment = 0
             AND ((%(municipality_cbs)s IS NULL AND a.geometry_ref LIKE 'cbs:GM%%') OR a.geometry_ref = %(municipality_cbs)s)
@@ -268,6 +270,8 @@ def query_day_stats(cur, municipality: Optional[str], system_id: Optional[str], 
                 CASE indicator
                     WHEN 1 THEN 'vehicle_cap'
                     WHEN 6 THEN 'number_of_wrongly_parked_vehicles'
+                    WHEN 10 THEN 'usage_ratio'
+                    WHEN 11 THEN 'minimal_number_of_available_vehicles'
                 END AS indicator,
                 value
             FROM day_statistics
@@ -276,7 +280,7 @@ def query_day_stats(cur, municipality: Optional[str], system_id: Optional[str], 
             AND (%(system_id)s IS NULL OR system_id = %(system_id)s)
             AND (%(form_factor_like)s IS NULL OR vehicle_type LIKE %(form_factor_like)s)
             AND (%(vehicle_type)s IS NULL OR vehicle_type LIKE %(vehicle_type)s)
-            AND indicator IN (1, 6)
+            AND indicator IN (1, 6, 10, 11 )
         ),
         dimensions AS (
             SELECT DISTINCT
