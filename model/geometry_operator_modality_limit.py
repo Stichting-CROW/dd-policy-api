@@ -18,6 +18,10 @@ class LimitValues(BaseModel):
     percentage_parked_longer_then_3_days: Optional[float] = None  # indicator 3
     percentage_parked_longer_then_7_days: Optional[float] = None  # indicator 4
     percentage_parked_longer_then_14_days: Optional[float] = None  # indicator 5
+    percentage_non_operational_longer_then_1_day: Optional[float] = None  # indicator 7
+    percentage_non_operational_longer_then_7_days: Optional[float] = None  # indicator 8
+    minimal_number_of_available_vehicles: Optional[int] = None  # indicator 9
+    usage_ratio: Optional[float] = None  # indicator 10
 
 
 class GeometryOperatorModalityLimit(BaseModel):
