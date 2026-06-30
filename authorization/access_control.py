@@ -2,7 +2,7 @@
 import logging
 
 import jwt
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Union, Optional
 from fastapi import Header
 from db_helper import db_helper
@@ -12,8 +12,14 @@ class ACL(BaseModel):
     is_admin: bool
     is_allowed_to_edit: bool
     allowed_to_change_geometry_operator_modality_limit: bool
-    municipalities: Optional[set] = set()
-    operators: Optional[set] = set()
+    municipalities: set = set()
+    operators: set = set()
+
+    @field_validator("municipalities", "operators", mode="before")
+    @classmethod
+    def _none_to_empty_set(cls, value):
+        # DB columns can be NULL; treat that as "no access" rather than None.
+        return value if value is not None else set()
 
 class User(BaseModel):
     email: str

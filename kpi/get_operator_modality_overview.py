@@ -16,11 +16,11 @@ def check_is_user_authorized_to_view_kpi(municipality: Optional[str], system_id:
         return True
     
     # For municipalities, allow when municipality parameter is used.
-    if municipality and municipality in current_user.acl.municipalities:
+    if municipality and municipality in (current_user.acl.municipalities or set()):
         return True
     
     # For operators, allow when system_id parameter is used.
-    if system_id and system_id in current_user.acl.operators:
+    if system_id and system_id in (current_user.acl.operators or set()):
         return True
     
     return False
