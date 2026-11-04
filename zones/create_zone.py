@@ -3,6 +3,7 @@ from db_helper import db_helper
 import json
 from fastapi import HTTPException
 from zones.zone import Zone, GeographyType
+from zones.stop import has_positive_capacity
 from modalities import Modality
 
 def create_single_zone(cur, zone: Zone, user):
@@ -62,7 +63,14 @@ def create_zones(zones, user):
 
     return result, errors
 
+def validate_stop_capacity(zone: Zone):
+    if zone.geography_type != "stop" or zone.stop is None:
+        return
+    if not has_positive_capacity(zone.stop.capacity):
+        raise HTTPException(status_code=422, detail="capacity should contain at least one positive value.")
+
 def create_zone(zone, user):
+    validate_stop_capacity(zone)
     with db_helper.get_resource() as (cur, conn):
         try:
             zone = create_single_zone(cur, zone, user)

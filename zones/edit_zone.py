@@ -5,7 +5,7 @@ from zones.create_zone import check_if_zone_is_valid, create_stop
 from zones.delete_zone import delete_stops
 from zones.get_zones import get_zone_by_id
 from zones.zone import Zone, EditZone, BulkEditZone, convert_to_edit_zone, GeographyType
-from zones.stop import Stop, PointFeatureModel
+from zones.stop import Stop, PointFeatureModel, has_positive_capacity
 from authorization import access_control
 from uuid import uuid1
 import json
@@ -40,7 +40,14 @@ def edit_zones(edit_zone_request: BulkEditZonesRequest,  user: access_control.Us
             print(e)
             raise HTTPException(status_code=500, detail="DB problem, check server log for details. \n\n" + str(e))
 
+def validate_stop_capacity(new_zone: EditZone):
+    if new_zone.stop is None or new_zone.stop.capacity is None:
+        return
+    if not has_positive_capacity(new_zone.stop.capacity):
+        raise HTTPException(status_code=400, detail="capacity should contain at least one positive value.")
+
 def edit_zone(new_zone: EditZone, user: access_control.User):
+    validate_stop_capacity(new_zone)
     with db_helper.get_resource() as (cur, conn):
         try:
             merged_zone = edit_single_zone(cur, new_zone=new_zone, user=user)
