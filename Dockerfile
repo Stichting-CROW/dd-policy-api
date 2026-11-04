@@ -1,24 +1,38 @@
-FROM python:3.14-slim 
+# syntax=docker/dockerfile:1
 
-RUN apt-get update && \
-    apt-get -y install libpq-dev gcc
+FROM python:3.14-slim AS builder
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Change the working directory to the `app` directory
+ENV UV_PYTHON_DOWNLOADS=0 \
+    UV_LINK_MODE=copy
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libpq-dev gcc libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Install dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --locked --no-install-project
+    uv sync --locked --no-install-project --no-dev
 
-# Copy the project into the image
 COPY . /app
 
-# Sync the project
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked
+    uv sync --locked --no-dev
 
-CMD ["uv", "run", "fastapi", "run"]
+FROM python:3.14-slim AS runtime
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=builder /app /app
+
+ENV PATH="/app/.venv/bin:$PATH"
+
+CMD ["fastapi", "run"]

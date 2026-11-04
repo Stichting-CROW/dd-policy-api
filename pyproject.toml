@@ -15,9 +15,13 @@ dependencies = [
     "shapely==2.1.2",
     "python-multipart==0.0.21",
     "fastkml==0.12",
-    "setuptools==75.4.0",
     "pytz==2024.1",
     "fudgeo==1.5.6",
     "isodate==0.7.2",
+]
+
+[dependency-groups]
+dev = [
     "pylint>=4.0.4",
+    "setuptools==75.4.0",
 ]
