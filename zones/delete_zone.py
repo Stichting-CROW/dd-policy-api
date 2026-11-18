@@ -47,8 +47,28 @@ def delete_single_zone(cur, geography_uuid: UUID, user):
     if zone.phase == "concept":
         delete_stops(cur, geography_uuid=geography_uuid)
         delete_geography(cur, geography_uuid=geography_uuid)
+        undo_propose_retirement_for_previous_geographies(cur, zone.prev_geographies)
     else:
         raise HTTPException(status_code=400, detail=f"It's not possible to delete a zone that is in another phase then concept, geography_id: {geography_uuid}")
+
+def undo_propose_retirement_for_previous_geographies(cur, geography_ids: list[UUID]):
+    if len(geography_ids) == 0:
+        return
+    stmt = """
+        UPDATE geographies g
+        SET propose_retirement = false,
+        modified_at = NOW(),
+        WHERE g.geography_id = ANY(%s)
+        AND g.propose_retirement = true
+        AND g.published_date IS NOT NULL
+        AND g.published_retire_date IS NULL
+        AND NOT EXISTS (
+            SELECT 1
+            FROM geographies successor
+            WHERE g.geography_id = ANY(successor.prev_geographies)
+        )
+    """
+    cur.execute(stmt, (geography_ids,))
 
 def delete_stops(cur, geography_uuid):
     stmt = """
